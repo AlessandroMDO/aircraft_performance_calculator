@@ -32,15 +32,15 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from functions.aero import Constants
+from functions.aero import Aero
 from functions.utils import *
 import math
 from functools import lru_cache
 
-c = Constants()
+c = Aero()
 
 
-@lru_cache(maxsize=10)
+
 def climb_angle(T, D, W):
     gamma = math.asin((T - D) / W)  # [rad]
 
@@ -50,7 +50,7 @@ def climb_angle(T, D, W):
 # -------------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------- GROUND RUN ---------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------------- #
-@lru_cache()
+
 def ground_run_acceleration(W_takeoff, mu, V_S, altitude, S, K, CD0, CL_max):
     # L e D precisa ser calculado considerando a velocidade de decolagem em 0.7 * (V_L0 = 1.15 * V_S)
     # W é o peso de decolagem
@@ -78,7 +78,7 @@ def ground_run_distance(V_S, W, mu,  CD0, K, S, altitude, CL_max, V_wind=0, thet
     return x_g
 
 
-def ground_run_time(V_S, W, mu, CD0, K, S, altitude, V_wind=0, theta_runway=0):
+def ground_run_time(V_S, W, mu, CD0, K, S, altitude, CL_max, V_wind=0, theta_runway=0):
 
     a = ground_run_acceleration(W_takeoff=W, mu=mu, V_S=V_S, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max)
     V_L0 = 1.15 * V_S
@@ -90,7 +90,7 @@ def ground_run_time(V_S, W, mu, CD0, K, S, altitude, V_wind=0, theta_runway=0):
 # -------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------- ROTATION ----------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------------- #
-@lru_cache()
+
 def rotation_time():
     t_r = 3  # [s]
 
@@ -132,7 +132,7 @@ def transition_time(V_S, T, W, D):
 # ------------------------------------------------------- CLIMB ------------------------------------------------------ #
 # -------------------------------------------------------------------------------------------------------------------- #
 
-@lru_cache()
+
 def climb_distance(T, D, V_S, W):
 
     V_L0 = 1.15 * V_S
@@ -163,18 +163,21 @@ def climb_time(T, D, V_S, W):
 
 def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
 
-    V_wind = takeoff_parameters['wind_velocity_takeoff']
-    theta_runway = takeoff_parameters['runway_slope_takeoff']
-    altitude = takeoff_parameters['altitude_takeoff']
-    mu = takeoff_parameters['mu_takeoff']
+    V_wind = takeoff_parameters['WIND_VELOCITY_TAKEOFF']
+    theta_runway = takeoff_parameters['RUNWAY_SLOPE_TAKEOFF']
+    altitude = takeoff_parameters['ALTITUDE_TAKEOFF']
+    mu = takeoff_parameters['MU_TAKEOFF']
+    V_S = takeoff_parameters['STALL_VELOCITY']
 
-    V_S = aircraft_parameters['stall_velocity']
-    W = aircraft_parameters['mtow']
-    S = aircraft_parameters['surface_area']
+    # Como calcular estes valors ?!
+    T = takeoff_parameters['T']
+    D = takeoff_parameters['D']
+
+    W = aircraft_parameters['MTOW']
+    S = aircraft_parameters['SURFACE_AREA']
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
-    T = aircraft_parameters['T']
-    D = aircraft_parameters['D']
+
 
     x_g = ground_run_distance(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S, K=K, CD0=CD0, CL_max=0.8)
     x_r = rotation_distance(V_S=V_S)
@@ -205,20 +208,22 @@ def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
 
 def total_takeoff_time(takeoff_parameters, aircraft_parameters, show=False):
 
-    V_wind = takeoff_parameters['wind_velocity_takeoff']
-    theta_runway = takeoff_parameters['runway_slope_takeoff']
-    altitude = takeoff_parameters['altitude_takeoff']
-    mu = takeoff_parameters['mu_takeoff']
+    V_wind = takeoff_parameters['WIND_VELOCITY_TAKEOFF']
+    theta_runway = takeoff_parameters['RUNWAY_SLOPE_TAKEOFF']
+    altitude = takeoff_parameters['ALTITUDE_TAKEOFF']
+    mu = takeoff_parameters['MU_TAKEOFF']
+    V_S = takeoff_parameters['STALL_VELOCITY']
 
-    V_S = aircraft_parameters['stall_velocity']
-    W = aircraft_parameters['mtow']
-    S = aircraft_parameters['surface_area']
+    T = takeoff_parameters['T']
+    D = takeoff_parameters['D']
+
+    W = aircraft_parameters['MTOW']
+    S = aircraft_parameters['SURFACE_AREA']
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
-    T = aircraft_parameters['T']
-    D = aircraft_parameters['D']
+    CL_max = aircraft_parameters['CL_MAX']
 
-    t_g = ground_run_time(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, CD0=CD0, K=K, S=S, altitude=altitude)
+    t_g = ground_run_time(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max)
     t_r = rotation_time()
     t_tr = transition_time(V_S=V_S, T=T, W=W, D=D)
     t_cl = climb_time(T=T, D=D, V_S=V_S, W=W)
