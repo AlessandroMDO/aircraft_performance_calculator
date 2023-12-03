@@ -42,6 +42,7 @@ c = Aero()
 
 
 def climb_angle(T, D, W):
+
     gamma = math.asin((T - D) / W)  # [rad]
 
     return gamma
@@ -51,36 +52,41 @@ def climb_angle(T, D, W):
 # ---------------------------------------------------- GROUND RUN ---------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------------- #
 
-def ground_run_acceleration(W_takeoff, mu, V_S, altitude, S, K, CD0, CL_max):
+def ground_run_acceleration(W_takeoff, mu, V_S, altitude, S, K, CD0, CL_max, T0, thrust_factor):
+
     # L e D precisa ser calculado considerando a velocidade de decolagem em 0.7 * (V_L0 = 1.15 * V_S)
     # W é o peso de decolagem
     # Pagina 386
+
     V_L0 = 1.15 * V_S
+
     rho = c.get_density(altitude=altitude)
-    # TODO: Abner usou CL_LO = 0.8 CL_MAX
+
     CL_L0 = 0.8 * CL_max
+
     V = 0.7 * V_L0
     q = (rho * V ** 2) / 2
     L = CL_L0 * q * S
     D = (CD0 + K * CL_L0 ** 2) * q * S
-    T = 10 * D
+
+    T = c.calculate_general_thrust(altitude=altitude, sea_level_thrust=T0, thrust_factor=thrust_factor)
     a = (c.g / W_takeoff) * (T - D - mu * (W_takeoff - L))  # [m/s^2]
 
     return a
 
 
-def ground_run_distance(V_S, W, mu,  CD0, K, S, altitude, CL_max, V_wind=0, theta_runway=0):
+def ground_run_distance(V_S, W, mu,  CD0, K, S, altitude, CL_max, T0, thrust_factor, V_wind=0, theta_runway=0):
 
-    a = ground_run_acceleration(W_takeoff=W, mu=mu, V_S=V_S, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max)
+    a = ground_run_acceleration(W_takeoff=W, mu=mu, V_S=V_S, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max, T0=T0, thrust_factor=thrust_factor)
     V_L0 = 1.15 * V_S
     x_g = ((V_L0 + V_wind) ** 2) / (2 * (a + c.g * math.sin(theta_runway)))  # [m] Página 385
 
     return x_g
 
 
-def ground_run_time(V_S, W, mu, CD0, K, S, altitude, CL_max, V_wind=0, theta_runway=0):
+def ground_run_time(V_S, W, mu, CD0, K, S, altitude, CL_max, T0, thrust_factor, V_wind=0, theta_runway=0):
 
-    a = ground_run_acceleration(W_takeoff=W, mu=mu, V_S=V_S, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max)
+    a = ground_run_acceleration(W_takeoff=W, mu=mu, V_S=V_S, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max, T0=T0, thrust_factor=thrust_factor)
     V_L0 = 1.15 * V_S
     t_g = (V_L0 + V_wind) / (a + c.g * math.sin(theta_runway))  # [s]
 
@@ -149,8 +155,10 @@ def climb_distance(T, D, V_S, W):
 
 
 def climb_time(T, D, V_S, W):
+
     gamma = climb_angle(T=T, D=D, W=W)
     x_cl = climb_distance(T=T, D=D, V_S=V_S, W=W)
+
     V_cl = 1.3 * V_S  # página 382
     t_cl = x_cl / (V_cl * math.cos(gamma))
 
@@ -169,18 +177,21 @@ def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
     mu = takeoff_parameters['MU_TAKEOFF']
     V_S = takeoff_parameters['STALL_VELOCITY']
 
-    # Como calcular estes valors ?!
-    T = takeoff_parameters['T']
+    # Como calcular estes valores ?!
+    # T = takeoff_parameters['T']
+
     D = takeoff_parameters['D']
 
     W = aircraft_parameters['MTOW']
     S = aircraft_parameters['SURFACE_AREA']
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
+    T0 = aircraft_parameters['T0']
+    thrust_factor = aircraft_parameters['THRUST_FACTOR']
 
-
-    x_g = ground_run_distance(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S, K=K, CD0=CD0, CL_max=0.8)
+    x_g = ground_run_distance(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S, K=K, CD0=CD0, CL_max=0.8, T0=T0, thrust_factor=thrust_factor)
     x_r = rotation_distance(V_S=V_S)
+
     x_cl = climb_distance(T=T, D=D, V_S=V_S, W=W)
     x_tr = transition_distance(V_S=V_S, T=T, D=D, W=W)
 
@@ -214,7 +225,7 @@ def total_takeoff_time(takeoff_parameters, aircraft_parameters, show=False):
     mu = takeoff_parameters['MU_TAKEOFF']
     V_S = takeoff_parameters['STALL_VELOCITY']
 
-    T = takeoff_parameters['T']
+    # T = takeoff_parameters['T']
     D = takeoff_parameters['D']
 
     W = aircraft_parameters['MTOW']
@@ -222,8 +233,10 @@ def total_takeoff_time(takeoff_parameters, aircraft_parameters, show=False):
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
     CL_max = aircraft_parameters['CL_MAX']
+    T0 = aircraft_parameters['T0']
+    thrust_factor = aircraft_parameters['THRUST_FACTOR']
 
-    t_g = ground_run_time(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max)
+    t_g = ground_run_time(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max, T0=T0, thrust_factor=thrust_factor)
     t_r = rotation_time()
     t_tr = transition_time(V_S=V_S, T=T, W=W, D=D)
     t_cl = climb_time(T=T, D=D, V_S=V_S, W=W)
