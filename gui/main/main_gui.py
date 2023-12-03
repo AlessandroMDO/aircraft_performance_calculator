@@ -11,14 +11,11 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(800, 800)
         self.setMaximumSize(800, 800)
 
-        # Create a stacked widget to hold different windows
         self.stacked_widget = QTabWidget()
 
-        # Create a horizontal menu bar
         menu_widget = QWidget()
         menu_layout = QHBoxLayout(menu_widget)
 
-        # Define actions for different windows
         self.window_actions = {
             "WINDOW_GUI_AIRCRAFT_PARAMETERS": self.create_gui_aircraft_parameters,
             "WINDOW_GUI_TAKEOFF_LANDING": self.create_gui_takeoff_landing
@@ -36,10 +33,13 @@ class MainWindow(QMainWindow):
             action.triggered.connect(self.window_actions[window_name])
             menu_button = QPushButton(window_name)
             menu_layout.addWidget(menu_button)
-            menu_button.clicked.connect(action.trigger)  # Trigger the corresponding action when button clicked
+            menu_button.clicked.connect(action.trigger)
 
-        self.setMenuWidget(menu_widget)  # Set the menu widget as the central widget
+        self.setMenuWidget(menu_widget)
         self.setCentralWidget(self.stacked_widget)
+
+        first_window_name = next(iter(self.window_actions.keys()))
+        self.window_actions[first_window_name]()
 
     def create_gui_aircraft_parameters(self):
         # print(self.window_state)
@@ -47,7 +47,6 @@ class MainWindow(QMainWindow):
             ex = GUI_AIRCRAFT_PARAMETERS()
             ex.setupUi(ex)
 
-            # Create a new instance of GUI_AIRCRAFT_PARAMETERS_V2
             self.stacked_widget.addTab(ex, "")
             self.window_state["WINDOW_GUI_AIRCRAFT_PARAMETERS"] = ex
 
@@ -60,7 +59,6 @@ class MainWindow(QMainWindow):
             ex = GUI_DECOLAGEM(aircraft_parameters_class=self.window_state["WINDOW_GUI_AIRCRAFT_PARAMETERS"])
             ex.setupUi(ex)
 
-            # Create a new instance of GUI_DECOLAGEM_V2
             self.stacked_widget.addTab(ex, "")
             self.window_state["WINDOW_GUI_TAKEOFF_LANDING"] = ex
 
