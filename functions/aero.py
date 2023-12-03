@@ -12,11 +12,9 @@ class Aero:
     def __init__(self):
 
         self.R_gas = 287.058  
-        self.g = 9.81
+        self.g = 9.81 # Aceleração da gravidade [m/s^2]
         self.rho_0 = self.get_density(altitude=0)
-        #self.g = 9.81                       # Aceleração da gravidade [m/s^2]
         self.h_Sc = 15.24                   # Altura mínima de decolagem (screen height)
-        #self.R_gas = 287.058                # J/(kg*K) Constante dos gases
         self.maximum_breaking_constant = 0.55 * 9.81
         self.medium_breaking_constant = 0.35 * 9.81
         self.minimum_breaking_constant = 0.15 * 9.81

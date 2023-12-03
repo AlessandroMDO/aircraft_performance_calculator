@@ -1,6 +1,7 @@
 from PySide2.QtWidgets import QApplication, QMainWindow, QTabWidget, QPushButton, QWidget, QHBoxLayout, QAction
-from gui.gui_takeoff_landing.ui_takeoff_landing import GUI_DECOLAGEM
-from gui.gui_aircraft_parameters.ui_aircraft_parameters import GUI_AIRCRAFT_PARAMETERS
+from ui_takeoff_landing import GUI_DECOLAGEM
+from ui_aircraft_parameters import GUI_AIRCRAFT_PARAMETERS
+
 
 
 class MainWindow(QMainWindow):

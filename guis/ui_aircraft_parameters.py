@@ -16,7 +16,7 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget
 
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
-    def __init__(self, background_path="AIRCRAFT_PARAMETERS_800_600.png"):
+    def __init__(self, background_path="guis/AIRCRAFT_PARAMETERS_800_600.png"):
 
         super(GUI_AIRCRAFT_PARAMETERS, self).__init__()
 
@@ -39,7 +39,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.background_path = background_path
 
         # self.aircrafts = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select nome_aeronave, id from Airplanes;", first_value=False)
-        _, self.aircrafts_parameters = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None

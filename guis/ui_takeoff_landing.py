@@ -17,8 +17,10 @@ from functions.takeoff import total_takeoff_distance, total_takeoff_time
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 
 
+
+
 class GUI_DECOLAGEM(QMainWindow):
-    def __init__(self, aircraft_parameters_class, background_path="TAKEOFF_LANDING_800_600.png"):
+    def __init__(self, aircraft_parameters_class, background_path="guis/TAKEOFF_LANDING_800_600.png"):
 
         self.aero = Aero()
 
@@ -28,8 +30,8 @@ class GUI_DECOLAGEM(QMainWindow):
 
         self.aircraft_parameters_class = aircraft_parameters_class
 
-        self.runway_condition_options, _ = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select superficie from GroundType;")
-        self.airports, _ = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
+        self.runway_condition_options, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select superficie from GroundType;")
+        self.airports, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
 
         self.background_path = background_path
         self.run_analysis_button = None
@@ -444,7 +446,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_runway_takeoff_condition_parameter(self):
         self.runway_condition_takeoff_mu, _ = execute_generic_query(
-            db_path=r"../../db/utils/aero.db",
+            db_path=r"../db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_takeoff_text}';")
 
     def handle_wind_velocity_takeoff_value(self):
@@ -523,7 +525,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.logger.debug(self.current_takeoff_airport_iata)
         self.logger.debug(self.current_takeoff_airport_iata is None)
         airport_takeoff_results, _ = execute_generic_query(
-            db_path=r"../../db/utils/aero.db",
+            db_path=r"../db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code from airports where iata='{self.current_takeoff_airport_iata}';",
             first_value=False)
 
@@ -545,7 +547,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_runway_landing_condition_parameter(self):
         self.runway_condition_landing_mu, _ = execute_generic_query(
-            db_path=r"../../db/utils/aero.db",
+            db_path=r"../db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_landing_text}';")
 
     def handle_runway_temperature_landing_value(self):
@@ -619,7 +621,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_landing_airport_parameters(self):
         airport_landing_results, _ = execute_generic_query(
-            db_path=r"../../db/utils/aero.db",
+            db_path=r"../db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code from airports where iata='{self.current_landing_airport_iata}';",
             first_value=False)
 
