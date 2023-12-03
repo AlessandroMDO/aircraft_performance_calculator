@@ -28,14 +28,14 @@ class GUI_DECOLAGEM(QMainWindow):
 
         self.aircraft_parameters_class = aircraft_parameters_class
 
-        self.runway_condition_options = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select superficie from GroundType;")
-        self.airports = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
+        self.runway_condition_options, _ = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select superficie from GroundType;")
+        self.airports, _ = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
 
         self.background_path = background_path
         self.run_analysis_button = None
         self.takeoff_parameters = None
         self.landing_parameters = None
-        self.airport_landing_parameters = None
+        self.airport_landing_parameters = {}
         self.current_landing_airport_iata = None
         self.airport_list_landing = None
         self.airport_takeoff_parameters = {}
@@ -168,6 +168,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.wind_velocity_takeoff.setTabStopWidth(80)
         self.wind_velocity_takeoff.setAcceptRichText(True)
         self.wind_velocity_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the wind velocity.", None))
+        self.wind_velocity_takeoff.setText("0")
         self.wind_velocity_takeoff.textChanged.connect(self.handle_wind_velocity_takeoff_value)
 
         # -------------------------------------------------------------------------------------------------------------#
@@ -186,6 +187,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_slope_takeoff.setTabStopWidth(80)
         self.runway_slope_takeoff.setAcceptRichText(True)
         self.runway_slope_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway slope.", None))
+        self.runway_slope_takeoff.setText("0")
         self.runway_slope_takeoff.textChanged.connect(self.handle_slope_takeoff_value)
 
         # -------------------------------------------------------------------------------------------------------------#
@@ -204,6 +206,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_temperature_takeoff.setTabStopWidth(80)
         self.runway_temperature_takeoff.setAcceptRichText(True)
         self.runway_temperature_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway temperature.", None))
+        self.runway_temperature_takeoff.setText("30")
         self.runway_temperature_takeoff.textChanged.connect(self.handle_runway_temperature_takeoff_value)
 
         # --------------------------------------------------------------------------------------------------------------#
@@ -255,6 +258,16 @@ class GUI_DECOLAGEM(QMainWindow):
         self.airport_list_takeoff.currentIndexChanged.connect(self.handle_airport_list_takeoff_change)
 
         self.airport_list_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the departure airport", None))
+        self.airport_list_takeoff.setCurrentIndex(0)
+        self.logger.debug(self.airport_list_takeoff.currentIndex())
+
+        current_takeoff_airport = self.airport_list_takeoff.currentText()
+        self.logger.debug(f"current_takeoff_airport: {current_takeoff_airport}")
+
+        self.current_takeoff_airport_iata = current_takeoff_airport[6:9]
+        self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
+
+
         self.airport_list_takeoff.raise_()
 
         # --------------------------------------------------------------------------------------------------------------#
@@ -281,6 +294,8 @@ class GUI_DECOLAGEM(QMainWindow):
             count_runway_condition_takeoff += 1
 
         self.runway_condition_takeoff.currentIndexChanged.connect(self.handle_runway_takeoff_condition_change)
+        self.runway_condition_takeoff.setCurrentIndex(0)
+        self.runway_condition_takeoff_text = self.runway_condition_takeoff.currentText()
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
@@ -304,6 +319,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.wind_velocity_landing.setTabStopWidth(80)
         self.wind_velocity_landing.setAcceptRichText(True)
         self.wind_velocity_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the wind velocity.", None))
+        self.wind_velocity_landing.setText("0")
         self.wind_velocity_landing.textChanged.connect(self.handle_wind_velocity_landing_value)
 
         self.wind_velocity_landing.raise_()
@@ -334,6 +350,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_slope_landing.setTabStopWidth(80)
         self.runway_slope_landing.setAcceptRichText(True)
         self.runway_slope_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway slope.", None))
+        self.runway_slope_landing.setText("0")
         self.runway_slope_landing.textChanged.connect(self.handle_slope_landing_value)
 
         self.runway_slope_landing.raise_()
@@ -353,6 +370,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_temperature_landing.setTabStopWidth(80)
         self.runway_temperature_landing.setAcceptRichText(True)
         self.runway_temperature_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway temperature.", None))
+        self.runway_temperature_landing.setText("30")
         self.runway_temperature_landing.textChanged.connect(self.handle_runway_temperature_landing_value)
 
         self.runway_temperature_landing.raise_()
@@ -378,6 +396,15 @@ class GUI_DECOLAGEM(QMainWindow):
         self.airport_list_landing.currentIndexChanged.connect(self.handle_airport_list_landing_change)
 
         self.airport_list_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the arrival airport", None))
+        self.airport_list_landing.setCurrentIndex(3)
+
+        current_landing_airport = self.airport_list_landing.currentText()
+        self.logger.debug(f"current_landing_airport: {current_landing_airport}")
+
+        self.current_landing_airport_iata = current_landing_airport[6:9]
+        self.logger.debug(f"current_landing_airport_iata: {self.current_landing_airport_iata}")
+
+
         self.airport_list_landing.raise_()
 
         # --------------------------------------------------------------------------------------------------------------#
@@ -404,6 +431,8 @@ class GUI_DECOLAGEM(QMainWindow):
             count_runway_condition_landing += 1
 
         self.runway_condition_landing.currentIndexChanged.connect(self.handle_runway_landing_condition_change)
+        self.runway_condition_landing.setCurrentIndex(1)
+        self.runway_condition_landing_text = self.runway_condition_landing.currentText()
 
     # -----------------------------------------------------------------------------------------------------------------#
     # ------------------------------------------- HANDLE TAKEOFF FUNCTIONS --------------------------------------------#
@@ -414,7 +443,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_condition_takeoff_text = self.runway_condition_takeoff.currentText()
 
     def calculate_runway_takeoff_condition_parameter(self):
-        self.runway_condition_takeoff_mu = execute_generic_query(
+        self.runway_condition_takeoff_mu, _ = execute_generic_query(
             db_path=r"../../db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_takeoff_text}';")
 
@@ -482,15 +511,18 @@ class GUI_DECOLAGEM(QMainWindow):
     def handle_airport_list_takeoff_change(self):
 
         current_takeoff_airport = self.airport_list_takeoff.currentText()
+        self.logger.debug(f"current_takeoff_airport: {current_takeoff_airport}")
 
         self.current_takeoff_airport_iata = current_takeoff_airport[6:9]
+        self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
         self.airport_takeoff_parameters = {}
 
     def calculate_takeoff_airport_parameters(self):
-        print(self.airport_list_takeoff.currentText())
-        print(self.current_takeoff_airport_iata)
-        print(self.current_takeoff_airport_iata is None)
-        airport_takeoff_results = execute_generic_query(
+        self.logger.debug('----------------')
+        self.logger.debug(self.airport_list_takeoff.currentText())
+        self.logger.debug(self.current_takeoff_airport_iata)
+        self.logger.debug(self.current_takeoff_airport_iata is None)
+        airport_takeoff_results, _ = execute_generic_query(
             db_path=r"../../db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code from airports where iata='{self.current_takeoff_airport_iata}';",
             first_value=False)
@@ -512,7 +544,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_condition_landing_text = self.runway_condition_landing.currentText()
 
     def calculate_runway_landing_condition_parameter(self):
-        self.runway_condition_landing_mu = execute_generic_query(
+        self.runway_condition_landing_mu, _ = execute_generic_query(
             db_path=r"../../db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_landing_text}';")
 
@@ -586,7 +618,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.airport_landing_parameters = {}
 
     def calculate_landing_airport_parameters(self):
-        airport_landing_results = execute_generic_query(
+        airport_landing_results, _ = execute_generic_query(
             db_path=r"../../db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code from airports where iata='{self.current_landing_airport_iata}';",
             first_value=False)
@@ -618,36 +650,6 @@ class GUI_DECOLAGEM(QMainWindow):
         # Guardando o atrito da pista pouso self.runway_condition_landing_mu
         self.calculate_runway_landing_condition_parameter()
         self.logger.debug(f"Runway Condition Landing Mu: {self.runway_condition_landing_mu}")
-
-
-        # self.landing_parameters = {
-        #     "altitude_landing": self.airport_landing_parameters['airport_landing_elevation'],
-        #     "mu_landing": self.runway_condition_landing_mu,
-        #     "runway_slope_landing": self.runway_slope_landing_value,
-        #     "runway_temperature_landing": self.runway_temperature_landing_value,
-        #     "wind_velocity_landing": self.wind_velocity_landing_value
-        # }
-        #
-        # self.takeoff_parameters = {
-        #     "altitude_takeoff": self.airport_takeoff_parameters['airport_takeoff_elevation'],
-        #     "mu_takeoff": self.runway_condition_takeoff_mu,
-        #     "runway_slope_takeoff": self.runway_slope_takeoff_value,
-        #     "runway_temperature_takeoff": self.runway_temperature_takeoff_value,
-        #     "wind_velocity_takeoff": self.wind_velocity_takeoff_value
-        # }
-
-        # print(self.takeoff_parameters)
-        # print(self.landing_parameters)
-
-        # aircraft_parameters = {
-        #     'stall_velocity': 25,
-        #     'mtow': 5000,
-        #     'surface_area': 500,
-        #     'K': 0.4,
-        #     'CD0': 0.04,
-        #     'T': 200,
-        #     'D': 100
-        # }
 
         self.aircraft_parameters = self.aircraft_parameters_class.get_aircraft_parameters()
 

@@ -38,7 +38,8 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name = None
         self.background_path = background_path
 
-        self.aircrafts = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select nome_aeronave, id from Airplanes;", first_value=False)
+        # self.aircrafts = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select nome_aeronave, id from Airplanes;", first_value=False)
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select * from Airplanes;", first_value=False)
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None
@@ -123,10 +124,28 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         # self.run_analysis_button.clicked.connect(self.invoke_load_aircraft_from_db)
 
         # --------------------------------------------------------------------------------------------------------------#
+        # -------------------------------------------- LIST AIRCRAFTS IN DB --------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
-        # ----------------------------------------------- TAKEOFF ------------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
+        self.aircraft_list_db = QComboBox(self.centralwidget)
+        self.aircraft_list_db.setObjectName(u"aircraft_list_db")
+        self.aircraft_list_db.setGeometry(QRect(543, 129, 231, 20))
+        self.aircraft_list_db.setFont(font)
+        self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
+        self.aircraft_list_db.setEditable(False)
+        self.aircraft_list_db.setPalette(palette)
+
+        count_aircrafts = 0
+        for aircraft in self.aircrafts_parameters.keys():
+            self.aircraft_list_db.addItem("")
+            self.aircraft_list_db.setItemText(count_aircrafts,
+                                              QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+            count_aircrafts += 1
+
+        self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
+
+        self.aircraft_list_db.setToolTip(
+            QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
+        # self.aircraft_list_db.raise_()
 
         # --------------------------------------------------------------------------------------------------------------#
         # ------------------------------------------- AIRCRAFT NAME TEXT BOX -------------------------------------------#
@@ -163,6 +182,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cl_max.setAcceptRichText(True)
         self.cl_max.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Type the maxium lift coefficient.", None))
         self.cl_max.textChanged.connect(self.handle_cl_max_value)
+        self.cl_max.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['cl_max']))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ----------------------------------------------- CD0 TEXT BOX ----------------------------------------------#
@@ -181,6 +201,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cd0.setAcceptRichText(True)
         self.cd0.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Type the drag coefficient at zero lift.", None))
         self.cd0.textChanged.connect(self.handle_cd0_value)
+        self.cd0.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['cd0']))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ----------------------------------------------- K TEXT BOX ----------------------------------------------#
@@ -199,6 +220,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.k.setAcceptRichText(True)
         self.k.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"K = 1/(pi * aspect_ratio * Oswald efficiency)", None))
         self.k.textChanged.connect(self.handle_k_value)
+        self.k.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['k']))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ---------------------------------------------- WING AREA TEXT BOX --------------------------------------------#
@@ -217,6 +239,8 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.setAcceptRichText(True)
         self.wing_area.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"The relevant surface area", None))
         self.wing_area.textChanged.connect(self.handle_wing_area_value)
+        self.wing_area.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['area']))
+
 
         # --------------------------------------------------------------------------------------------------------------#
         Aircraft_Parameters.setCentralWidget(self.centralwidget)
@@ -227,6 +251,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cd0.raise_()
         self.k.raise_()
         self.wing_area.raise_()
+        self.aircraft_list_db.raise_()
 
         self.statusbar = QStatusBar(Aircraft_Parameters)
         self.statusbar.setObjectName(u"statusbar")
@@ -236,27 +261,27 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         Aircraft_Parameters.setWindowTitle(QCoreApplication.translate("Aircraft_Parameters", u"Aircraft_Parameters", None))
 
-        # --------------------------------------------------------------------------------------------------------------#
-        # -------------------------------------------- LIST AIRCRAFTS IN DB --------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-        self.aircraft_list_db = QComboBox(self.centralwidget)
-        self.aircraft_list_db.setObjectName(u"aircraft_list_db")
-        self.aircraft_list_db.setGeometry(QRect(543, 129, 231, 20))
-        self.aircraft_list_db.setFont(font)
-        self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
-        self.aircraft_list_db.setEditable(False)
-        self.aircraft_list_db.setPalette(palette)
-
-        count_aircrafts = 0
-        for aircraft in self.aircrafts:
-            self.aircraft_list_db.addItem("")
-            self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft[0]}", None))
-            count_aircrafts += 1
-
-        self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
-
-        self.aircraft_list_db.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
-        self.aircraft_list_db.raise_()
+        # # --------------------------------------------------------------------------------------------------------------#
+        # # -------------------------------------------- LIST AIRCRAFTS IN DB --------------------------------------------#
+        # # --------------------------------------------------------------------------------------------------------------#
+        # self.aircraft_list_db = QComboBox(self.centralwidget)
+        # self.aircraft_list_db.setObjectName(u"aircraft_list_db")
+        # self.aircraft_list_db.setGeometry(QRect(543, 129, 231, 20))
+        # self.aircraft_list_db.setFont(font)
+        # self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
+        # self.aircraft_list_db.setEditable(False)
+        # self.aircraft_list_db.setPalette(palette)
+        #
+        # count_aircrafts = 0
+        # for aircraft in self.aircrafts_parameters.keys():
+        #     self.aircraft_list_db.addItem("")
+        #     self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+        #     count_aircrafts += 1
+        #
+        # self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
+        #
+        # self.aircraft_list_db.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
+        # self.aircraft_list_db.raise_()
 
     def handle_aircraft_name_value(self):
         self.text_aircraft_name = self.new_aircraft_name.toPlainText()
@@ -274,7 +299,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 cl_max = float(text_cl_max)
-                if 0 <= cl_max < 10:
+                if 0 <= cl_max < 100:
                     self.cl_max_value = cl_max
                 else:
                     self.cl_max.clear()
@@ -291,7 +316,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 cd0 = float(text_cd0)
-                if 0 <= cd0 < 10:
+                if 0 <= cd0 < 100:
                     self.cd0_value = cd0
                 else:
                     self.cd0.clear()
@@ -309,7 +334,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 k = float(text_k)
-                if 0 <= k < 10:
+                if 0 <= k < 100:
                     self.k_value = k
                 else:
                     self.k.clear()
@@ -326,7 +351,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 wing_area = float(text_wing_area)
-                if 0 <= wing_area < 5000:
+                if 0 <= wing_area < 50000:
                     self.wing_area_value = wing_area
                 else:
                     self.wing_area.clear()
@@ -335,13 +360,17 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.logger.debug(f"Wing area: {self.wing_area_value}")
 
-
     def handle_aircraft_db_change(self):
+
         self.current_aircraft_db = self.aircraft_list_db.currentText()
+
         self.new_aircraft_name.setPlainText(self.current_aircraft_db)
+        self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
+        self.cd0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cd0']))
+        self.cl_max.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cl_max']))
+        self.k.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['k']))
 
         self.logger.debug(f"Current Aircraft DB: {self.current_aircraft_db}")
-
 
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
     def get_aircraft_parameters(self):
