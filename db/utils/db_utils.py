@@ -46,6 +46,15 @@ def execute_generic_query(db_path, query, first_value=True):
     return result, dict_results
 
 
+def insert_data_to_db(db_path, query):
+
+    con = get_con(db_path=db_path)
+    cur = con.cursor()
+    cur.execute(query)
+    con.commit()
+
+
+
 def drop_generic_table(table_name: str):
     con = get_con()
     cur = con.cursor()
