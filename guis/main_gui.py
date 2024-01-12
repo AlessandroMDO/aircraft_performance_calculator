@@ -67,12 +67,12 @@ class MainWindow(QMainWindow):
 
     def create_gui_flight_conditions(self):
         if self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"] is None:
-            ex = GUI_FLIGHT_CONDITIONS()
-            ex.setupUi(ex)
+            ex_flight_conditions = GUI_FLIGHT_CONDITIONS()
+            ex_flight_conditions.setupUi(ex_flight_conditions)
 
-            self.create_buttons(ex=ex)
-            self.stacked_widget.insertTab(1, ex, "")
-            self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"] = ex
+            self.create_buttons(ex=ex_flight_conditions)
+            self.stacked_widget.insertTab(1, ex_flight_conditions, "")
+            self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"] = ex_flight_conditions
 
 
         self.stacked_widget.setCurrentWidget(self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"])
