@@ -14,12 +14,16 @@ from db.utils.db_utils import *
 from functions.aero import Aero
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 
+#TODO: implementar botao para deletar uma aeronave da base
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
-    def __init__(self, background_path="guis/AIRCRAFT_PARAMETERS_800_600.png"):
+    def __init__(self, background_path="guis/AIRCRAFT_PARAMETERS_800_800.png"):
 
         super(GUI_AIRCRAFT_PARAMETERS, self).__init__()
 
+        self.oew_value = None
+        self.ne_value = None
+        self.e_value = None
         self.aero = Aero()
 
         self.k = None
@@ -66,35 +70,37 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
     def setupUi(self, Aircraft_Parameters):
         if not Aircraft_Parameters.objectName():
             Aircraft_Parameters.setObjectName(u"Aircraft_Parameters")
-        Aircraft_Parameters.resize(800, 600)
-        Aircraft_Parameters.setMinimumSize(QSize(800, 600))
-        Aircraft_Parameters.setMaximumSize(QSize(800, 600))
+
+        Aircraft_Parameters.resize(800, 800)
+        Aircraft_Parameters.setMinimumSize(QSize(800, 830))
+        Aircraft_Parameters.setMaximumSize(QSize(800, 830))
+
         self.centralwidget = QWidget(Aircraft_Parameters)
         self.centralwidget.setObjectName(u"centralwidget")
 
-        palette = QPalette()
-        brush = QBrush(QColor(255, 255, 255, 255))
-        brush.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Base, brush)
-        brush1 = QBrush(QColor(188, 188, 188, 255))
-        brush1.setStyle(Qt.SolidPattern)
-        palette.setBrush(QPalette.Active, QPalette.Window, brush1)
-        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
-        palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
-        palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
+        # palette = QPalette()
+        # brush = QBrush(QColor(255, 255, 255, 255))
+        # brush.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Base, brush)
+        # brush1 = QBrush(QColor(188, 188, 188, 255))
+        # brush1.setStyle(Qt.SolidPattern)
+        # palette.setBrush(QPalette.Active, QPalette.Window, brush1)
+        # palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        # palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
+        # palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
+        # palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
 
         font = QFont()
         font.setPointSize(10)
 
 
-        palette1 = QPalette()
-        palette1.setBrush(QPalette.Active, QPalette.Base, brush)
-        palette1.setBrush(QPalette.Active, QPalette.Window, brush1)
-        palette1.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        palette1.setBrush(QPalette.Inactive, QPalette.Window, brush1)
-        palette1.setBrush(QPalette.Disabled, QPalette.Base, brush1)
-        palette1.setBrush(QPalette.Disabled, QPalette.Window, brush1)
+        # palette1 = QPalette()
+        # palette1.setBrush(QPalette.Active, QPalette.Base, brush)
+        # palette1.setBrush(QPalette.Active, QPalette.Window, brush1)
+        # palette1.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        # palette1.setBrush(QPalette.Inactive, QPalette.Window, brush1)
+        # palette1.setBrush(QPalette.Disabled, QPalette.Base, brush1)
+        # palette1.setBrush(QPalette.Disabled, QPalette.Window, brush1)
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------- BACKGROUND IMAGE -----------------------------------------------#
@@ -102,17 +108,17 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.background = QLabel(self.centralwidget)
         self.background.setObjectName(u"background")
-        self.background.setGeometry(QRect(0, 0, 800, 600))
-        self.background.setMinimumSize(QSize(800, 600))
-        self.background.setMaximumSize(QSize(800, 600))
-        self.background.setLayoutDirection(Qt.LeftToRight)
-        self.background.setAutoFillBackground(False)
+        self.background.setGeometry(QRect(0, 0, 800, 800))
+        # self.background.setMinimumSize(QSize(800, 800))
+        # self.background.setMaximumSize(QSize(800, 800))
+        # self.background.setLayoutDirection(Qt.LeftToRight)
+        # self.background.setAutoFillBackground(False)
         self.background.setPixmap(QPixmap(self.background_path))
         self.background.update()
-        self.background.setScaledContents(True)
-        self.background.setAlignment(Qt.AlignCenter)
-        self.background.setIndent(0)
-        self.background.setText("")
+        # self.background.setScaledContents(True)
+        # self.background.setAlignment(Qt.AlignCenter)
+        # self.background.setIndent(0)
+        # self.background.setText("")
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
@@ -128,11 +134,11 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         # --------------------------------------------------------------------------------------------------------------#
         self.aircraft_list_db = QComboBox(self.centralwidget)
         self.aircraft_list_db.setObjectName(u"aircraft_list_db")
-        self.aircraft_list_db.setGeometry(QRect(543, 129, 231, 20))
+        self.aircraft_list_db.setGeometry(QRect(543, 194.7, 231, 25.7))
         self.aircraft_list_db.setFont(font)
         self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
         self.aircraft_list_db.setEditable(False)
-        self.aircraft_list_db.setPalette(palette)
+        # self.aircraft_list_db.setPalette(palette)
 
         count_aircrafts = 0
         for aircraft in self.aircrafts_parameters.keys():
@@ -143,9 +149,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
 
-        self.aircraft_list_db.setToolTip(
-            QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
-        # self.aircraft_list_db.raise_()
+        self.aircraft_list_db.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ------------------------------------------- AIRCRAFT NAME TEXT BOX -------------------------------------------#
@@ -153,7 +157,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.new_aircraft_name = QTextEdit(self.centralwidget)
         self.new_aircraft_name.setObjectName(u"new_aircraft_name")
-        self.new_aircraft_name.setGeometry(QRect(132, 129, 231, 20))
+        self.new_aircraft_name.setGeometry(QRect(132, 194.7, 231, 25.7))
         self.new_aircraft_name.setFont(font)
         self.new_aircraft_name.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.new_aircraft_name.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -171,7 +175,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.cl_max = QTextEdit(self.centralwidget)
         self.cl_max.setObjectName(u"cl_max")
-        self.cl_max.setGeometry(QRect(79, 161, 112, 20))
+        self.cl_max.setGeometry(QRect(251, 237.11, 112, 25.06))
         self.cl_max.setFont(font)
         self.cl_max.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.cl_max.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -190,7 +194,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.cd0 = QTextEdit(self.centralwidget)
         self.cd0.setObjectName(u"cd0")
-        self.cd0.setGeometry(QRect(62, 193, 112, 20))
+        self.cd0.setGeometry(QRect(251, 278.55, 112, 25.06))
         self.cd0.setFont(font)
         self.cd0.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.cd0.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -204,23 +208,137 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cd0.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['cd0']))
 
         # --------------------------------------------------------------------------------------------------------------#
-        # ----------------------------------------------- K TEXT BOX ----------------------------------------------#
+        # ----------------------------------------------- K TEXT BOX ---------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
-        self.k = QTextEdit(self.centralwidget)
-        self.k.setObjectName(u"k")
-        self.k.setGeometry(QRect(251, 225, 112, 20))
-        self.k.setFont(font)
-        self.k.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
-        self.k.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.k.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.k.setLineWrapMode(QTextEdit.FixedColumnWidth)
-        self.k.setLineWrapColumnOrWidth(500000)
-        self.k.setTabStopWidth(80)
-        self.k.setAcceptRichText(True)
-        self.k.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"K = 1/(pi * aspect_ratio * Oswald efficiency)", None))
-        self.k.textChanged.connect(self.handle_k_value)
-        self.k.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['k']))
+        # self.k = QTextEdit(self.centralwidget)
+        # self.k.setObjectName(u"k")
+        # self.k.setGeometry(QRect(251, 225, 112, 20))
+        # self.k.setFont(font)
+        # self.k.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        # self.k.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.k.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.k.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        # self.k.setLineWrapColumnOrWidth(500000)
+        # self.k.setTabStopWidth(80)
+        # self.k.setAcceptRichText(True)
+        # self.k.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"K = 1/(pi * aspect_ratio * Oswald efficiency)", None))
+        # self.k.textChanged.connect(self.handle_k_value)
+        # self.k.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['k']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ------------------------------------------- OSWALD NUMBER BOX ------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.e = QTextEdit(self.centralwidget)
+        self.e.setObjectName(u"e")
+        self.e.setGeometry(QRect(251, 319.04, 112, 25.06))
+        self.e.setFont(font)
+        self.e.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.e.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.e.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.e.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.e.setLineWrapColumnOrWidth(500000)
+        self.e.setTabStopWidth(80)
+        self.e.setAcceptRichText(True)
+        self.e.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Oswald efficiency)", None))
+        self.e.textChanged.connect(self.handle_e_value)
+        self.e.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['e']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ------------------------------------------- OEW NUMBER BOX ------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.oew = QTextEdit(self.centralwidget)
+        self.oew.setObjectName(u"oew")
+        self.oew.setGeometry(QRect(251, 361.45, 112, 25.06))
+        self.oew.setFont(font)
+        self.oew.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.oew.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.oew.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.oew.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.oew.setLineWrapColumnOrWidth(500000)
+        self.oew.setTabStopWidth(80)
+        self.oew.setAcceptRichText(True)
+        self.oew.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Operational Empty Weight)", None))
+        self.oew.textChanged.connect(self.handle_oew_value)
+        self.oew.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['oew']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ------------------------------------------- WINGSPAN NUMBER BOX ------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.b = QTextEdit(self.centralwidget)
+        self.b.setObjectName(u"b")
+        self.b.setGeometry(QRect(251, 402.89, 112, 25.06))
+        self.b.setFont(font)
+        self.b.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.b.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.b.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.b.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.b.setLineWrapColumnOrWidth(500000)
+        self.b.setTabStopWidth(80)
+        self.b.setAcceptRichText(True)
+        self.b.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Wingspan)", None))
+        self.b.textChanged.connect(self.handle_b_value)
+        self.b.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['b']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ------------------------------------------- TSFC NUMBER BOX ------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.tsfc = QTextEdit(self.centralwidget)
+        self.tsfc.setObjectName(u"tsfc")
+        self.tsfc.setGeometry(QRect(251, 485.78, 112, 25.06))
+        self.tsfc.setFont(font)
+        self.tsfc.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.tsfc.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tsfc.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tsfc.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.tsfc.setLineWrapColumnOrWidth(500000)
+        self.tsfc.setTabStopWidth(80)
+        self.tsfc.setAcceptRichText(True)
+        self.tsfc.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"TSFC)", None))
+        self.tsfc.textChanged.connect(self.handle_tsfc_value)
+        self.tsfc.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['tsfc']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ------------------------------------------- T0 NUMBER BOX ------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.t0 = QTextEdit(self.centralwidget)
+        self.t0.setObjectName(u"t0")
+        self.t0.setGeometry(QRect(251, 527, 112, 25.06))
+        self.t0.setFont(font)
+        self.t0.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.t0.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.t0.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.t0.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.t0.setLineWrapColumnOrWidth(500000)
+        self.t0.setTabStopWidth(80)
+        self.t0.setAcceptRichText(True)
+        self.t0.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Thrust per engine)", None))
+        self.t0.textChanged.connect(self.handle_t0_value)
+        self.t0.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['t0']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # -------------------------------------- NUMBER OF ENGINES NUMBER BOX ------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.ne = QTextEdit(self.centralwidget)
+        self.ne.setObjectName(u"ne")
+        self.ne.setGeometry(QRect(251, 567, 112, 25.06))
+        self.ne.setFont(font)
+        self.ne.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.ne.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ne.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ne.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.ne.setLineWrapColumnOrWidth(500000)
+        self.ne.setTabStopWidth(80)
+        self.ne.setAcceptRichText(True)
+        self.ne.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Number of engines)", None))
+        self.ne.textChanged.connect(self.handle_ne_value)
+        self.ne.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['ne']))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ---------------------------------------------- WING AREA TEXT BOX --------------------------------------------#
@@ -228,7 +346,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.wing_area = QTextEdit(self.centralwidget)
         self.wing_area.setObjectName(u"wing_area")
-        self.wing_area.setGeometry(QRect(143, 466, 112, 20))
+        self.wing_area.setGeometry(QRect(251, 444.34, 112, 25.06))
         self.wing_area.setFont(font)
         self.wing_area.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.wing_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -241,6 +359,14 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.textChanged.connect(self.handle_wing_area_value)
         self.wing_area.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['area']))
 
+        # --------------------------------------------------------------------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.create_db_button = QPushButton(self.centralwidget)
+        self.create_db_button.setText("")  # Set an empty text to hide the label
+        self.create_db_button.setGeometry(QRect(107, 738, 169, 39))
+        self.create_db_button.setStyleSheet("border: none; background: none;")
+        self.create_db_button.clicked.connect(self.save_current_aicraft_to_db)
 
         # --------------------------------------------------------------------------------------------------------------#
         Aircraft_Parameters.setCentralWidget(self.centralwidget)
@@ -249,39 +375,25 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name.raise_()
         self.cl_max.raise_()
         self.cd0.raise_()
-        self.k.raise_()
+        # self.k.raise_()
+        self.e.raise_()
+        self.oew.raise_()
+        self.b.raise_()
+        self.tsfc.raise_()
+        self.t0.raise_()
+        self.ne.raise_()
         self.wing_area.raise_()
         self.aircraft_list_db.raise_()
+        self.create_db_button.raise_()
 
         self.statusbar = QStatusBar(Aircraft_Parameters)
         self.statusbar.setObjectName(u"statusbar")
+
         Aircraft_Parameters.setStatusBar(self.statusbar)
 
         QMetaObject.connectSlotsByName(Aircraft_Parameters)
 
         Aircraft_Parameters.setWindowTitle(QCoreApplication.translate("Aircraft_Parameters", u"Aircraft_Parameters", None))
-
-        # # --------------------------------------------------------------------------------------------------------------#
-        # # -------------------------------------------- LIST AIRCRAFTS IN DB --------------------------------------------#
-        # # --------------------------------------------------------------------------------------------------------------#
-        # self.aircraft_list_db = QComboBox(self.centralwidget)
-        # self.aircraft_list_db.setObjectName(u"aircraft_list_db")
-        # self.aircraft_list_db.setGeometry(QRect(543, 129, 231, 20))
-        # self.aircraft_list_db.setFont(font)
-        # self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
-        # self.aircraft_list_db.setEditable(False)
-        # self.aircraft_list_db.setPalette(palette)
-        #
-        # count_aircrafts = 0
-        # for aircraft in self.aircrafts_parameters.keys():
-        #     self.aircraft_list_db.addItem("")
-        #     self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
-        #     count_aircrafts += 1
-        #
-        # self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
-        #
-        # self.aircraft_list_db.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
-        # self.aircraft_list_db.raise_()
 
     def handle_aircraft_name_value(self):
         self.text_aircraft_name = self.new_aircraft_name.toPlainText()
@@ -343,6 +455,114 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.logger.debug(f"K value: {self.k_value}")
 
+    def handle_e_value(self):
+
+        text_e = self.e.toPlainText()
+
+        if not text_e:
+            self.e.setPlainText("0")
+        else:
+            try:
+                e = float(text_e)
+                if 0 <= e < 100:
+                    self.e_value = e
+                else:
+                    self.e.clear()
+            except ValueError:
+                self.e.clear()
+
+        self.logger.debug(f"e value: {self.e_value}")
+
+    def handle_oew_value(self):
+
+        text_oew = self.oew.toPlainText()
+
+        if not text_oew:
+            self.oew.setPlainText("0")
+        else:
+            try:
+                oew = float(text_oew)
+                if 0 <= oew < 1000000:
+                    self.oew_value = oew
+                else:
+                    self.oew.clear()
+            except ValueError:
+                self.oew.clear()
+
+        self.logger.debug(f"oew value: {self.oew_value}")
+
+    def handle_b_value(self):
+
+        text_b = self.b.toPlainText()
+
+        if not text_b:
+            self.b.setPlainText("0")
+        else:
+            try:
+                b = float(text_b)
+                if 0 <= b < 1000000:
+                    self.b_value = b
+                else:
+                    self.b.clear()
+            except ValueError:
+                self.b.clear()
+
+        self.logger.debug(f"b value: {self.b_value}")
+
+    def handle_tsfc_value(self):
+
+        text_tsfc = self.tsfc.toPlainText()
+
+        if not text_tsfc:
+            self.tsfc.setPlainText("0")
+        else:
+            try:
+                tsfc = float(text_tsfc)
+                if 0 <= tsfc < 10:
+                    self.tsfc_value = tsfc
+                else:
+                    self.tsfc.clear()
+            except ValueError:
+                self.tsfc.clear()
+
+        self.logger.debug(f"tsfc value: {self.tsfc_value}")
+
+    def handle_t0_value(self):
+
+        text_t0 = self.t0.toPlainText()
+
+        if not text_t0:
+            self.t0.setPlainText("0")
+        else:
+            try:
+                t0 = float(text_t0)
+                if 0 <= t0 < 10000000:
+                    self.t0_value = t0
+                else:
+                    self.t0.clear()
+            except ValueError:
+                self.t0.clear()
+
+        self.logger.debug(f"T0 value: {self.t0_value}")
+
+    def handle_ne_value(self):
+
+        text_ne = self.ne.toPlainText()
+
+        if not text_ne:
+            self.ne.setPlainText("0")
+        else:
+            try:
+                ne = float(text_ne)
+                if 0 <= ne < 10:
+                    self.ne_value = ne
+                else:
+                    self.ne.clear()
+            except ValueError:
+                self.ne.clear()
+
+        self.logger.debug(f"Number of engines value: {self.ne_value}")
+
     def handle_wing_area_value(self):
         text_wing_area = self.wing_area.toPlainText()
 
@@ -368,7 +588,12 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cd0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cd0']))
         self.cl_max.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cl_max']))
-        self.k.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['k']))
+        self.e.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['e']))
+        self.oew.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['oew']))
+        self.b.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['b']))
+        self.tsfc.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['tsfc']))
+        self.t0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['t0']))
+        self.ne.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['ne']))
 
         self.logger.debug(f"Current Aircraft DB: {self.current_aircraft_db}")
 
@@ -376,13 +601,17 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
     def get_aircraft_parameters(self):
 
         result = {
-            'OEW': 1,
-            'WINGSPAN': 1,
-            'TSFC': 1,
-            'MTOW': 5000,
+            'AIRCRAFT_NAME': self.text_aircraft_name,
+            'OEW': self.oew_value * 1000,
+            'b': self.b_value,
+            'e': self.e_value,
+            'AR': (self.b_value ** 2) / self.wing_area_value,
+            'TSFC': self.tsfc_value,
+            'T0': self.t0_value * 1000,
+            'NE': self.ne_value,
             'CL_MAX': self.cl_max_value,
-            'SURFACE_AREA': self.wing_area_value,
-            'K': self.k_value,
+            'S': self.wing_area_value,
+            'K': 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value)),
             'CD0': self.cd0_value
         }
 
@@ -390,6 +619,53 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         return result
 
+    def warning_box(self, message):
+
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setText(message)
+        msg_box.setWindowTitle('Warning')
+        msg_box.exec_()
+
+    def success_box(self, message):
+        msg_box = QMessageBox()
+        msg_box.setIcon(QMessageBox.Information)
+        msg_box.setText(message)
+        msg_box.setWindowTitle('Success')
+        msg_box.exec_()
+
+
+    def save_current_aicraft_to_db(self):
+
+        result = self.get_aircraft_parameters()
+
+        if result['AIRCRAFT_NAME'] in self.aircrafts_parameters.keys():
+            self.warning_box(message='Aircraft already in the database. Give it another name.')
+
+        elif result['AIRCRAFT_NAME'] is None:
+            self.warning_box(message='The aircraft name must not be empty. Give it a name.')
+
+        else:
+
+            insert_query = f""" 
+            INSERT INTO airplanes 
+            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne) 
+            VALUES (
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW'] / 1000}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0'] / 1000}, {result['NE']}) ;
+            """
+
+            insert_data_to_db(db_path=r"./db/utils/aero.db", query=insert_query)
+            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+
+            self.aircraft_list_db.clear()
+
+            count_aircrafts = 0
+            for aircraft in self.aircrafts_parameters.keys():
+                self.aircraft_list_db.addItem("")
+                self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+                count_aircrafts += 1
+
+            self.success_box(message='Aircraft successfully created!')
 
 
 if __name__ == "__main__":
