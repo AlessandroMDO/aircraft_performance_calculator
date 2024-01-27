@@ -29,7 +29,7 @@ class TestGliding(unittest.TestCase):
             "CRUISE_ALTITUDE": 4000
         }
 
-        results = gliding_range_endurance(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters, V_cru=25, W=525, graph=True)
+        results = gliding_range_endurance(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters, V_cru=25, W=525, graph=False)
 
         assert math.floor(results['GLIDING_CONSTANT_LIFT']['GLIDING_RANGE_CONSTANT_LIFT_STANDARD']) == math.floor(89031.34)
         assert math.floor(results['GLIDING_CONSTANT_LIFT']['GLIDING_ENDURANCE_CONSTANT_LIFT_STANDARD']) == math.floor(5607.33)
