@@ -10,7 +10,7 @@ class TestDistance(unittest.TestCase):
         self.assertAlmostEqual(a, math.pi/6, places=1)
 
         b = climb_angle(T=1500, D=600, W=800)
-        self.assertAlmostEqual(b, 3, places=1)
+        self.assertAlmostEqual(b, math.radians(3), places=1)
 
 
 
