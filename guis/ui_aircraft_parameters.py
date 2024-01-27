@@ -21,6 +21,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         super(GUI_AIRCRAFT_PARAMETERS, self).__init__()
 
+        self.tsfc_value = None
         self.oew_value = None
         self.ne_value = None
         self.e_value = None

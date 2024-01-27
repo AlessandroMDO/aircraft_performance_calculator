@@ -4,6 +4,7 @@ import sys
 current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
+sys.path.append('../functions')
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
@@ -13,19 +14,34 @@ from PySide2 import QtWidgets
 from db.utils.db_utils import *
 from functions.aero import Aero
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from functions.cruising_jet import cruising_jet_endurance, cruising_jet_range, get_cruise_velocity
+
+
 
 class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
-    def __init__(self, background_path="guis/FLIGHT_CONDITIONS_800_800.png"):
+    def __init__(self, aircraft_parameters_class=None, background_path="guis/FLIGHT_CONDITIONS_800_800.png"):
 
         super(GUI_FLIGHT_CONDITIONS, self).__init__()
 
-        self.fw_value = None
-        self.oew_value = None
-        self.ne_value = None
-        self.e_value = None
+        self.cw_value = 0
+        self.np_value = 10
+        self.airport_takeoff_parameters = None
+
+        self.airport_landing_parameters = None
+
+        self.runway_slope_landing_value = 0
+        self.wind_velocity_landing_value = 0
+        self.cruise_altitude_value = 11000
+        self.display_altitude_takeoff = ""
+        self.fw_value = 0
+        self.oew_value = 0
+        self.ne_value = 1
+        self.e_value = 1
         self.aero = Aero()
         self.display_altitude_landing_value = None
+
+        self.aircraft_parameters = aircraft_parameters_class
 
         self.k = None
         self.cd0 = None
@@ -55,6 +71,9 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.vento_contra_takeoff_flag = 1
         self.vento_contra_takeoff = None
+
+        self.vento_contra_landing_flag = 1
+        self.vento_contra_landing = None
 
         self.wind_velocity_takeoff_value = 0
         self.wind_velocity_takeoff = None
@@ -161,19 +180,19 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         # ------------------------------------- DISPATCHED CARGO NUMBER BOX --------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
-        self.pw = QTextEdit(self.centralwidget)
-        self.pw.setObjectName(u"pw")
-        self.pw.setGeometry(QRect(298, 177, 95, 22))
-        self.pw.setFont(font)
-        self.pw.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
-        self.pw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.pw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.pw.setLineWrapMode(QTextEdit.FixedColumnWidth)
-        self.pw.setLineWrapColumnOrWidth(500000)
-        self.pw.setTabStopWidth(80)
-        self.pw.setAcceptRichText(True)
-        self.pw.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Dispatched Cargo Weight", None))
-        self.pw.textChanged.connect(self.handle_pw_value)
+        self.cw = QTextEdit(self.centralwidget)
+        self.cw.setObjectName(u"cw")
+        self.cw.setGeometry(QRect(298, 177, 95, 22))
+        self.cw.setFont(font)
+        self.cw.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.cw.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cw.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cw.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.cw.setLineWrapColumnOrWidth(500000)
+        self.cw.setTabStopWidth(80)
+        self.cw.setAcceptRichText(True)
+        self.cw.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Dispatched Cargo Weight", None))
+        self.cw.textChanged.connect(self.handle_cw_value)
 
 
         # ------------------------------------------------------------------------------------------------------------ #
@@ -195,7 +214,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.wind_velocity_takeoff.setLineWrapColumnOrWidth(500000)
         self.wind_velocity_takeoff.setTabStopWidth(80)
         self.wind_velocity_takeoff.setAcceptRichText(True)
-        self.wind_velocity_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the wind velocity.", None))
+        self.wind_velocity_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the wind velocity.", None))
         self.wind_velocity_takeoff.setText("0")
         self.wind_velocity_takeoff.textChanged.connect(self.handle_wind_velocity_takeoff_value)
 
@@ -206,7 +225,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.vento_contra_takeoff = QCheckBox(self.centralwidget)
         self.vento_contra_takeoff.setObjectName(u"vento_contra_takeoff")
         self.vento_contra_takeoff.setGeometry(QRect(303, 314, 67, 16))
-        self.vento_contra_takeoff.setText(QCoreApplication.translate("Takeoff_Landing", u"Against", None))
+        self.vento_contra_takeoff.setText(QCoreApplication.translate("Flight_Conditions", u"Against", None))
         self.vento_contra_takeoff.setChecked(False)
         self.vento_contra_takeoff.stateChanged.connect(self.handle_wind_takeoff_against_checkbox)
 
@@ -225,13 +244,14 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         for airport_code in self.airports:
             self.airport_list_takeoff.addItem("")
             airport_code_content = f"IATA: {airport_code[0]} / ICAO: {airport_code[1]}"
-            self.airport_list_takeoff.setItemText(count_airports_takeoff, QCoreApplication.translate("Takeoff_Landing", f"{airport_code_content}", None))
+            self.airport_list_takeoff.setItemText(count_airports_takeoff, QCoreApplication.translate("Flight_Conditions", f"{airport_code_content}", None))
             count_airports_takeoff += 1
 
         self.airport_list_takeoff.currentIndexChanged.connect(self.handle_airport_list_takeoff_change)
 
-        self.airport_list_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the departure airport", None))
-        self.airport_list_takeoff.setCurrentIndex(0)
+        self.airport_list_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Select the departure airport", None))
+        self.airport_list_takeoff.setCurrentIndex(1)
+        # self.handle_airport_list_takeoff_change()
         self.logger.debug(self.airport_list_takeoff.currentIndex())
 
         current_takeoff_airport = self.airport_list_takeoff.currentText()
@@ -253,13 +273,13 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_condition_takeoff.setLayoutDirection(Qt.LeftToRight)
         self.runway_condition_takeoff.setEditable(False)
 
-        self.runway_condition_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the runway condition", None))
+        self.runway_condition_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Select the runway condition", None))
 
         count_runway_condition_takeoff = 0
         runway_condition_options = self.runway_condition_options
         for airport_runway_condition in runway_condition_options:
             self.runway_condition_takeoff.addItem("")
-            self.runway_condition_takeoff.setItemText(count_runway_condition_takeoff, QCoreApplication.translate("Takeoff_Landing", f"{airport_runway_condition}", None))
+            self.runway_condition_takeoff.setItemText(count_runway_condition_takeoff, QCoreApplication.translate("Flight_Conditions", f"{airport_runway_condition}", None))
             count_runway_condition_takeoff += 1
 
         self.runway_condition_takeoff.currentIndexChanged.connect(self.handle_runway_takeoff_condition_change)
@@ -281,7 +301,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_takeoff.setLineWrapColumnOrWidth(500000)
         self.runway_slope_takeoff.setTabStopWidth(80)
         self.runway_slope_takeoff.setAcceptRichText(True)
-        self.runway_slope_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway slope.", None))
+        self.runway_slope_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the runway slope.", None))
         self.runway_slope_takeoff.setText("0")
         self.runway_slope_takeoff.textChanged.connect(self.handle_slope_takeoff_value)
 
@@ -351,13 +371,13 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         for airport_code in self.airports:
             self.airport_list_landing.addItem("")
             airport_code_content = f"IATA: {airport_code[0]} / ICAO: {airport_code[1]}"
-            self.airport_list_landing.setItemText(count_airports_landing, QCoreApplication.translate("Takeoff_Landing", f"{airport_code_content}", None))
+            self.airport_list_landing.setItemText(count_airports_landing, QCoreApplication.translate("Flight_Conditions", f"{airport_code_content}", None))
             count_airports_landing += 1
 
         self.airport_list_landing.currentIndexChanged.connect(self.handle_airport_list_landing_change)
 
-        self.airport_list_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the arrival airport", None))
-        self.airport_list_landing.setCurrentIndex(3)
+        self.airport_list_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Select the arrival airport", None))
+        self.airport_list_landing.setCurrentIndex(1)
 
         current_landing_airport = self.airport_list_landing.currentText()
         self.logger.debug(f"current_landing_airport: {current_landing_airport}")
@@ -396,7 +416,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.wind_velocity_landing.setLineWrapColumnOrWidth(500000)
         self.wind_velocity_landing.setTabStopWidth(80)
         self.wind_velocity_landing.setAcceptRichText(True)
-        self.wind_velocity_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the wind velocity.", None))
+        self.wind_velocity_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the wind velocity.", None))
         self.wind_velocity_landing.setText("0")
         self.wind_velocity_landing.textChanged.connect(self.handle_wind_velocity_landing_value)
 
@@ -408,7 +428,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.vento_contra_landing = QCheckBox(self.centralwidget)
         self.vento_contra_landing.setObjectName(u"vento_contra_landing")
         self.vento_contra_landing.setGeometry(QRect(703, 318, 67, 16))
-        self.vento_contra_landing.setText(QCoreApplication.translate("Takeoff_Landing", u"Against", None))
+        self.vento_contra_landing.setText(QCoreApplication.translate("Flight_Conditions", u"Against", None))
         self.vento_contra_landing.setChecked(False)
         self.vento_contra_landing.stateChanged.connect(self.handle_wind_landing_against_checkbox)
 
@@ -427,7 +447,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_landing.setLineWrapColumnOrWidth(500000)
         self.runway_slope_landing.setTabStopWidth(80)
         self.runway_slope_landing.setAcceptRichText(True)
-        self.runway_slope_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Type the runway slope.", None))
+        self.runway_slope_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the runway slope.", None))
         self.runway_slope_landing.setText("0")
         self.runway_slope_landing.textChanged.connect(self.handle_slope_landing_value)
 
@@ -444,13 +464,13 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_condition_landing.setLayoutDirection(Qt.LeftToRight)
         self.runway_condition_landing.setEditable(False)
 
-        self.runway_condition_landing.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the runway condition", None))
+        self.runway_condition_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Select the runway condition", None))
 
         count_runway_condition_landing = 0
         runway_condition_options = self.runway_condition_options
         for airport in runway_condition_options:
             self.runway_condition_landing.addItem("")
-            self.runway_condition_landing.setItemText(count_runway_condition_landing, QCoreApplication.translate("Takeoff_Landing", f"{airport}", None))
+            self.runway_condition_landing.setItemText(count_runway_condition_landing, QCoreApplication.translate("Flight_Conditions", f"{airport}", None))
             count_runway_condition_landing += 1
 
         self.runway_condition_landing.currentIndexChanged.connect(self.handle_runway_landing_condition_change)
@@ -480,12 +500,34 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
 
 
+        # -------------------------------------------------------------------------------------------------------------#
+        # ----------------------------------------- CRUISE ALTITUDE TEXT BOX ------------------------------------------#
+        # -------------------------------------------------------------------------------------------------------------#
 
+        self.cruise_altitude = QTextEdit(self.centralwidget)
+        self.cruise_altitude.setObjectName(u"runway_slope_landing")
+        self.cruise_altitude.setGeometry(QRect(600, 117, 95, 22))
+        self.cruise_altitude.setFont(font)
+        self.cruise_altitude.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.cruise_altitude.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cruise_altitude.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cruise_altitude.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.cruise_altitude.setLineWrapColumnOrWidth(500000)
+        self.cruise_altitude.setTabStopWidth(80)
+        self.cruise_altitude.setAcceptRichText(True)
+        self.cruise_altitude.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Cruise altitude", None))
+        self.cruise_altitude.setText("11000")
+        self.cruise_altitude.textChanged.connect(self.handle_cruise_altitude_value)
 
+        # -------------------------------------------------------------------------------------------------------------#
+        # ----------------------------------------- RUN ANALYSIS ------------------------------------------------------#
+        # -------------------------------------------------------------------------------------------------------------#
 
-
-
-
+        self.run_analysis_button = QPushButton(self.centralwidget)
+        self.run_analysis_button.setText("")  # Set an empty text to hide the label
+        self.run_analysis_button.setGeometry(QRect(316, 721, 168, 44))
+        self.run_analysis_button.setStyleSheet("border: none; background: none;")
+        self.run_analysis_button.clicked.connect(self.invoke_analysis)
 
 
 
@@ -547,7 +589,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.background.raise_()
         self.np.raise_()
         self.fw.raise_()
-        self.pw.raise_()
+        self.cw.raise_()
 
         self.display_altitude_landing.raise_()
         self.display_runway_lenght_landing.raise_()
@@ -567,6 +609,9 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.vento_contra_landing.raise_()
         self.runway_slope_landing.raise_()
         self.runway_condition_landing.raise_()
+        self.cruise_altitude.raise_()
+        self.run_analysis_button.raise_()
+
 
 
 
@@ -608,7 +653,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             self.fw.setPlainText("0")
         else:
             try:
-                fw = int(text_fw)
+                fw = float(text_fw)
                 if 0 <= fw < 10000:
                     self.fw_value = fw
                 else:
@@ -618,23 +663,41 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.logger.debug(f"Fuel weight (ton): {self.fw_value}")
 
-    def handle_pw_value(self):
+    def handle_cw_value(self):
 
-        text_pw = self.pw.toPlainText()
+        text_cw = self.cw.toPlainText()
 
-        if not text_pw:
-            self.pw.setPlainText("0")
+        if not text_cw:
+            self.cw.setPlainText("0")
         else:
             try:
-                pw = float(text_pw)
-                if 0 <= pw < 10000:
-                    self.pw_value = pw
+                cw = float(text_cw)
+                if 0 <= cw < 10000:
+                    self.cw_value = cw
                 else:
-                    self.pw.clear()
+                    self.cw.clear()
             except ValueError:
-                self.pw.clear()
+                self.cw.clear()
 
-        self.logger.debug(f"Dispatched Cargo Weight (ton): {self.pw_value}")
+        self.logger.debug(f"Dispatched Cargo Weight (ton): {self.cw_value}")
+
+    def handle_cruise_altitude_value(self):
+
+        text_cruise_altitude = self.cruise_altitude.toPlainText()
+
+        if not text_cruise_altitude:
+            self.cruise_altitude.setPlainText("0")
+        else:
+            try:
+                cruise_altitude = float(text_cruise_altitude)
+                if 0 <= cruise_altitude < 1000000:
+                    self.cruise_altitude_value = cruise_altitude
+                else:
+                    self.cruise_altitude.clear()
+            except ValueError:
+                self.cruise_altitude.clear()
+
+        self.logger.debug(f"Cruise altitude [m]: {self.cruise_altitude_value}")
 
     def handle_wind_velocity_takeoff_value(self):
 
@@ -666,18 +729,21 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.current_takeoff_airport_iata = current_takeoff_airport[6:9]
         self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
+
         self.airport_takeoff_parameters = {}
 
         self.calculate_takeoff_airport_parameters()
 
-        self.display_altitude_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION']}"
-        self.display_runway_lenght_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_TAKEOFF_RUNWAY_DISTANCE']}"
-        self.display_airport_name_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_NAME']}"
+        if len(self.airport_takeoff_parameters) != 0:
+
+            self.display_altitude_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION']}"
+            self.display_runway_lenght_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_TAKEOFF_RUNWAY_DISTANCE']}"
+            self.display_airport_name_takeoff_value = f"{self.airport_takeoff_parameters['AIRPORT_NAME']}"
 
 
-        self.display_altitude_takeoff.setText(self.display_altitude_takeoff_value)
-        self.display_runway_lenght_takeoff.setText(self.display_runway_lenght_takeoff_value)
-        self.display_airport_name_takeoff.setText(self.display_airport_name_takeoff_value)
+            self.display_altitude_takeoff.setText(self.display_altitude_takeoff_value)
+            self.display_runway_lenght_takeoff.setText(self.display_runway_lenght_takeoff_value)
+            self.display_airport_name_takeoff.setText(self.display_airport_name_takeoff_value)
 
     def handle_airport_list_landing_change(self):
 
@@ -687,20 +753,30 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.calculate_landing_airport_parameters()
 
-        self.display_altitude_landing_value = f"{self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION']}"
-        self.display_runway_lenght_landing_value = f"{self.airport_landing_parameters['AIRPORT_LANDING_RUNWAY_DISTANCE']}"
-        self.display_airport_name_landing_value = f"{self.airport_landing_parameters['AIRPORT_NAME']}"
+        if len(self.airport_landing_parameters) != 0:
+
+            self.display_altitude_landing_value = f"{self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION']}"
+            self.display_runway_lenght_landing_value = f"{self.airport_landing_parameters['AIRPORT_LANDING_RUNWAY_DISTANCE']}"
+            self.display_airport_name_landing_value = f"{self.airport_landing_parameters['AIRPORT_NAME']}"
 
 
-        self.display_altitude_landing.setText(self.display_altitude_landing_value)
-        self.display_runway_lenght_landing.setText(self.display_runway_lenght_landing_value)
-        self.display_airport_name_landing.setText(self.display_airport_name_landing_value)
+            self.display_altitude_landing.setText(self.display_altitude_landing_value)
+            self.display_runway_lenght_landing.setText(self.display_runway_lenght_landing_value)
+            self.display_airport_name_landing.setText(self.display_airport_name_landing_value)
 
 
 
     def handle_runway_takeoff_condition_change(self):
 
         self.runway_condition_takeoff_text = self.runway_condition_takeoff.currentText()
+        self.calculate_runway_takeoff_condition_parameter()
+
+
+    def calculate_runway_takeoff_condition_parameter(self):
+        self.runway_condition_takeoff_mu, _ = execute_generic_query(
+            db_path=r"./db/utils/aero.db",
+            query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_takeoff_text}';")
+
 
     def handle_slope_takeoff_value(self):
 
@@ -745,28 +821,53 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         text_runway_slope_landing = self.runway_slope_landing.toPlainText()
         self.logger.debug(f"Runway Slope Landing: {text_runway_slope_landing}")
 
+        # Checamos se a caixa de texto está vazia
+        if not text_runway_slope_landing:
+            self.runway_slope_landing.setPlainText("0")
+        else:
+            try:
+                runway_slope_value = float(text_runway_slope_landing)
+
+                if abs(runway_slope_value) <= 45:
+                    self.runway_slope_landing_value = runway_slope_value
+                else:
+                    self.runway_slope_landing.clear()
+            except ValueError:
+                self.runway_slope_landing.clear()
+
+        self.logger.debug(f"Runway Slope Landing: {self.runway_slope_landing_value}")
+
     def handle_runway_landing_condition_change(self):
 
         self.runway_condition_landing_text = self.runway_condition_landing.currentText()
+        self.calculate_runway_landing_condition_parameter()
+
+    def calculate_runway_landing_condition_parameter(self):
+
+        self.runway_condition_landing_mu, _ = execute_generic_query(
+            db_path=r"./db/utils/aero.db",
+            query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_landing_text}';")
+
 
     def calculate_takeoff_airport_parameters(self):
         self.logger.debug('----------------')
         self.logger.debug(self.airport_list_takeoff.currentText())
         self.logger.debug(self.current_takeoff_airport_iata)
         self.logger.debug(self.current_takeoff_airport_iata is None)
+
         airport_takeoff_results, _ = execute_generic_query(
             db_path=r"./db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code, aeroporto from airports where iata='{self.current_takeoff_airport_iata}';",
             first_value=False)
 
-        self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'] = airport_takeoff_results[0][0]
-        self.airport_takeoff_parameters['AIRPORT_TAKEOFF_RUNWAY_DISTANCE'] = airport_takeoff_results[0][1]
-        self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LATITUDE'] = airport_takeoff_results[0][2]
-        self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE'] = airport_takeoff_results[0][3]
-        self.airport_takeoff_parameters['AIRPORT_IATA_CODE'] = airport_takeoff_results[0][4]
-        self.airport_takeoff_parameters['AIRPORT_NAME'] = airport_takeoff_results[0][5]
+        if len(airport_takeoff_results) != 0:
 
-        self.airport_takeoff_parameters['AIRPORT_TAKEOFF_DENSITY'] = self.aero.get_density(self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'])
+            self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'] = airport_takeoff_results[0][0]
+            self.airport_takeoff_parameters['AIRPORT_TAKEOFF_RUNWAY_DISTANCE'] = airport_takeoff_results[0][1]
+            self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LATITUDE'] = airport_takeoff_results[0][2]
+            self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE'] = airport_takeoff_results[0][3]
+            self.airport_takeoff_parameters['AIRPORT_IATA_CODE'] = airport_takeoff_results[0][4]
+            self.airport_takeoff_parameters['AIRPORT_NAME'] = airport_takeoff_results[0][5]
 
     def calculate_landing_airport_parameters(self):
         airport_landing_results, _ = execute_generic_query(
@@ -774,15 +875,25 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code, aeroporto from airports where iata='{self.current_landing_airport_iata}';",
             first_value=False)
 
-        self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION']        = airport_landing_results[0][0]
-        self.airport_landing_parameters['AIRPORT_LANDING_RUNWAY_DISTANCE']  = airport_landing_results[0][1]
-        self.airport_landing_parameters['AIRPORT_LANDING_LATITUDE']         = airport_landing_results[0][2]
-        self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE']        = airport_landing_results[0][3]
-        self.airport_landing_parameters['AIRPORT_IATA_CODE']                = airport_landing_results[0][4]
-        self.airport_landing_parameters['AIRPORT_NAME']                     = airport_landing_results[0][5]
+        if len(airport_landing_results) != 0:
+            self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION']        = airport_landing_results[0][0]
+            self.airport_landing_parameters['AIRPORT_LANDING_RUNWAY_DISTANCE']  = airport_landing_results[0][1]
+            self.airport_landing_parameters['AIRPORT_LANDING_LATITUDE']         = airport_landing_results[0][2]
+            self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE']        = airport_landing_results[0][3]
+            self.airport_landing_parameters['AIRPORT_IATA_CODE']                = airport_landing_results[0][4]
+            self.airport_landing_parameters['AIRPORT_NAME']                     = airport_landing_results[0][5]
 
 
+    def invoke_analysis(self):
 
+        flight_parameters = self.get_flight_parameters()
+        result_cruise_velocity = get_cruise_velocity(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
+        result_cruising_jet_range = cruising_jet_range(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters)
+
+
+        self.logger.debug(f"Parâmetros:\n{flight_parameters}")
+        self.logger.debug(f"Cruise Velocity:\n{result_cruise_velocity}")
+        self.logger.debug(f"Cruising Jet Range:\n{result_cruising_jet_range}")
 
 
 
@@ -798,26 +909,38 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
     def get_flight_parameters(self):
-        pass
 
-        # result = {
-        #     'AIRCRAFT_NAME': self.text_aircraft_name,
-        #     'OEW': self.oew_value * 1000,
-        #     'b': self.b_value,
-        #     'e': self.e_value,
-        #     'AR': (self.b_value ** 2) / self.wing_area_value,
-        #     'TSFC': self.tsfc_value,
-        #     'T0': self.t0_value * 1000,
-        #     'NE': self.ne_value,
-        #     'CL_MAX': self.cl_max_value,
-        #     'S': self.wing_area_value,
-        #     'K': 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value)),
-        #     'CD0': self.cd0_value
-        # }
-        #
-        # self.logger.debug(f"Current aircraft parameters: {result}")
+        flight_parameters = {
 
-        # return result
+            "takeoff_parameters": {
+                "WIND_VELOCITY_TAKEOFF": self.wind_velocity_takeoff_value,
+                "RUNWAY_SLOPE_TAKEOFF": self.runway_slope_takeoff_value,
+                "ALTITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'],
+                "MU_TAKEOFF": self.runway_condition_takeoff_mu
+            },
+
+            "landing_parameters": {
+                "WIND_VELOCITY_LANDING": self.wind_velocity_landing_value,
+                "RUNWAY_SLOPE_LANDING": self.runway_slope_landing_value,
+                "ALTITUDE_LANDING": self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION'],
+                "MU_LANDING": self.runway_condition_landing_mu
+            },
+            "CRUISE_ALTITUDE": self.cruise_altitude_value,
+            "NUMBER_OF_PASSENGERS": self.np_value,
+            "FUEL_WEIGHT": self.fw_value * 1000,
+            "DISPATCHED_CARGO_WEIGHT": self.cw_value * 1000,
+            "PAYLOAD_WEIGHT": self.cw_value * 1000 + 80 * self.np_value
+
+
+
+        }
+
+        self.logger.debug(flight_parameters['takeoff_parameters'])
+        self.logger.debug(flight_parameters['landing_parameters'])
+
+
+        return flight_parameters
+
 
     def warning_box(self, message):
 
@@ -834,38 +957,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         msg_box.setWindowTitle('Success')
         msg_box.exec_()
 
-
-    def save_current_aicraft_to_db(self):
-
-        result = self.get_aircraft_parameters()
-
-        if result['AIRCRAFT_NAME'] in self.aircrafts_parameters.keys():
-            self.warning_box(message='Aircraft already in the database. Give it another name.')
-
-        elif result['AIRCRAFT_NAME'] is None:
-            self.warning_box(message='The aircraft name must not be empty. Give it a name.')
-
-        else:
-
-            insert_query = f""" 
-            INSERT INTO airplanes 
-            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne) 
-            VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW'] / 1000}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0'] / 1000}, {result['NE']}) ;
-            """
-
-            insert_data_to_db(db_path=r"./db/utils/aero.db", query=insert_query)
-            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
-
-            self.aircraft_list_db.clear()
-
-            count_aircrafts = 0
-            for aircraft in self.aircrafts_parameters.keys():
-                self.aircraft_list_db.addItem("")
-                self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Flight_Conditions", f"{aircraft}", None))
-                count_aircrafts += 1
-
-            self.success_box(message='Aircraft successfully created!')
 
 
 if __name__ == "__main__":

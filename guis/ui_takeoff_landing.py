@@ -22,6 +22,7 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget
 class GUI_DECOLAGEM(QMainWindow):
     def __init__(self, aircraft_parameters_class, background_path="guis/TAKEOFF_LANDING_800_600.png"):
 
+        self.aircraft_parameters = None
         self.aero = Aero()
 
         super(GUI_DECOLAGEM, self).__init__()
@@ -58,13 +59,6 @@ class GUI_DECOLAGEM(QMainWindow):
         self.runway_condition_landing = None
         self.runway_condition_landing_mu = None
         self.runway_condition_landing_text = None
-
-
-
-        # self.current_takeoff_airport = self.airports[0][0]
-        # self.current_landing_airport = self.airports[0][0]
-
-
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None
@@ -111,7 +105,6 @@ class GUI_DECOLAGEM(QMainWindow):
 
         font = QFont()
         font.setPointSize(10)
-
 
         palette1 = QPalette()
         palette1.setBrush(QPalette.Active, QPalette.Base, brush)
@@ -446,7 +439,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_runway_takeoff_condition_parameter(self):
         self.runway_condition_takeoff_mu, _ = execute_generic_query(
-            db_path=r"../db/utils/aero.db",
+            db_path=r"./db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_takeoff_text}';")
 
     def handle_wind_velocity_takeoff_value(self):
@@ -519,13 +512,14 @@ class GUI_DECOLAGEM(QMainWindow):
         self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
         self.airport_takeoff_parameters = {}
 
+
     def calculate_takeoff_airport_parameters(self):
         self.logger.debug('----------------')
         self.logger.debug(self.airport_list_takeoff.currentText())
         self.logger.debug(self.current_takeoff_airport_iata)
         self.logger.debug(self.current_takeoff_airport_iata is None)
         airport_takeoff_results, _ = execute_generic_query(
-            db_path=r"../db/utils/aero.db",
+            db_path=r"./db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code from airports where iata='{self.current_takeoff_airport_iata}';",
             first_value=False)
 
@@ -547,7 +541,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_runway_landing_condition_parameter(self):
         self.runway_condition_landing_mu, _ = execute_generic_query(
-            db_path=r"../db/utils/aero.db",
+            db_path=r"./db/utils/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_landing_text}';")
 
     def handle_runway_temperature_landing_value(self):
@@ -621,7 +615,7 @@ class GUI_DECOLAGEM(QMainWindow):
 
     def calculate_landing_airport_parameters(self):
         airport_landing_results, _ = execute_generic_query(
-            db_path=r"../db/utils/aero.db",
+            db_path=r"./db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code from airports where iata='{self.current_landing_airport_iata}';",
             first_value=False)
 
@@ -660,8 +654,7 @@ class GUI_DECOLAGEM(QMainWindow):
                 W=self.aircraft_parameters['MTOW'],
                 S=self.aircraft_parameters['SURFACE_AREA'],
                 CL_max=self.aircraft_parameters['CL_MAX'],
-                rho=self.airport_takeoff_parameters['AIRPORT_TAKEOFF_DENSITY'],
-                logger=self.logger),
+                rho=self.airport_takeoff_parameters['AIRPORT_TAKEOFF_DENSITY']),
             "ALTITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'],
             "MU_TAKEOFF": self.runway_condition_takeoff_mu,
             "RUNWAY_SLOPE_TAKEOFF": self.runway_slope_takeoff_value,
@@ -674,7 +667,7 @@ class GUI_DECOLAGEM(QMainWindow):
         self.logger.debug(f"Takeoff Parameters: {self.takeoff_parameters}")
 
         self.takeoff_distance = total_takeoff_distance(takeoff_parameters=self.takeoff_parameters, aircraft_parameters=self.aircraft_parameters, show=True)
-        self.takeoff_time = total_takeoff_time(takeoff_parameters=self.takeoff_parameters, aircraft_parameters=self.aircraft_parameters, show=True)
+        # self.takeoff_time = total_takeoff_time(takeoff_parameters=self.takeoff_parameters, aircraft_parameters=self.aircraft_parameters, show=True)
 
 
 

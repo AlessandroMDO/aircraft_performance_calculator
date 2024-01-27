@@ -35,6 +35,15 @@ c = Aero()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 def approach_distance(V_S):
+    """
+
+    Args:
+        V_S: velocidade de stall
+
+    Returns:
+        x_Ap = distancia percorrida durante a fase de approach
+
+    """
     gamma_Ap = c.gamma_Ap
     V_Ap = 1.3 * V_S
     R_f = (V_Ap ** 2) / (0.08 * c.g)
@@ -48,12 +57,17 @@ def approach_distance(V_S):
     return x_Ap
 
 
-def approach_time(V_S, rho, S, W_Ap, C_Lm_Ap):
+def approach_time(V_S, altitude, S, aircraft_parameters):
+
     # W_Ap = peso da aeronave no pouso. Ou seja, bem menos do que o peso de decolagem, já que consumiu combustível
     # S = áre alar
     # C_Lm_Ap = maximum lift coefficient (CL_max)
     # rho = densidade do local de pouso
 
+    W_Ap = aircraft_parameters['MTOW'] - 0.8 * aircraft_parameters['PAYLOAD_WEIGHT']
+    C_Lm_Ap = aircraft_parameters['CL_MAX']
+
+    rho = c.get_density(altitude=altitude)
     gamma_Ap = c.gamma_Ap
     x_Ap = approach_distance(V_S)
     V_Ap = (2 * (W_Ap / S) / (rho * C_Lm_Ap)) ** 0.5
@@ -67,6 +81,7 @@ def approach_time(V_S, rho, S, W_Ap, C_Lm_Ap):
 # -------------------------------------------------------------------------------------------------------------------- #
 
 def flare_distance(V_S):
+
     gamma_Ap = c.gamma_Ap
     V_Ap = 1.3 * V_S
     x_f = ((V_Ap ** 2) / (0.08 * c.g)) * math.sin(gamma_Ap)
@@ -74,6 +89,7 @@ def flare_distance(V_S):
 
 
 def flare_time(V_S):
+
     gamma_Ap = c.gamma_Ap
     V_Ap = 1.3 * V_S
     t_f = (V_Ap * gamma_Ap) / (0.08 * c.g)
@@ -100,20 +116,20 @@ def rotation_time():
 # -------------------------------------------------------------------------------------------------------------------- #
 
 def landing_roll_distance(V_S, V_wind=0):
+
     V_Td = 1.15 * V_S
     d = c.medium_breaking_constant * c.g
 
-    # x_g_La = (V_Td**2)/(2*d)
     x_g_La = (V_Td + V_wind) * (V_Td / (2 * d))
 
     return x_g_La
 
 
 def landing_roll_time(V_S, V_wind=0):
+
     V_Td = 1.15 * V_S
     d = c.medium_breaking_constant * c.g
 
-    # t_g_La = V_Td / d
     t_g_La = (V_Td / d) * (1 + V_wind)
 
     return t_g_La
@@ -155,8 +171,11 @@ def total_landing_distance(parameters_dict, show=False):
     return landing_distance_result
 
 
-def total_landing_time(V_S, S, rho, W_Ap, C_Lm_Ap, show=False):
-    t_ap = approach_time(rho=rho, S=S, W_Ap=W_Ap, C_Lm_Ap=C_Lm_Ap, V_S=V_S)
+def total_landing_time(V_S, S, altitude, aircraft_parameters, show=False):
+
+    # W_Ap = aircraft_parameters['MTOW'] - 0.8 * aircraft_parameters['PAYLOAD_WEIGHT']
+
+    t_ap = approach_time(altitude=altitude, S=S, aircraft_parameters=aircraft_parameters, V_S=V_S)
     t_f = flare_time(V_S=V_S)
     t_R_La = rotation_time()
     t_g_La = landing_roll_time(V_S=V_S)

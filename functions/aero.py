@@ -19,19 +19,36 @@ class Aero:
         self.medium_breaking_constant = 0.35 * 9.81
         self.minimum_breaking_constant = 0.15 * 9.81
         self.gamma_Ap = math.radians(3)
+        self.person_weight = 75  # [kg]
 
-    def calculate_general_drag_coefficient(self, S, K, CD0, altitude, V, W):
-        rho = self.get_density(altitude=altitude)
+    def calculate_general_drag_coefficient(self, K, CD0, S=None, altitude=None, V=None, W=None, CL=None):
+        """
+            Calcula o coeficiente de arrasto geral com base no coeficiente de sustentação, área da asa, altitude, velocidade, peso e coeficiente de arrasto parasita.
 
-        CL = (2 * W) / (S * rho * V ** 2)
+            Parâmetros:
+            - K: Coeficiente de inclinação da sustentação (CL por radiano).
+            - CD0: Coeficiente de arrasto parasita sem sustentação (CD0).
+            - S: Área da asa (opcional, será calculada automaticamente se não fornecida).
+            - altitude: Altitude em metros (opcional).
+            - V: Velocidade em metros por segundo (opcional).
+            - W: Peso da aeronave em Newtons (opcional).
+            - CL: Coeficiente de sustentação (opcional, será calculado automaticamente se não fornecido).
 
-        CD = CD0 + K * CL**2
+            Retorna:
+            - CD: Coeficiente de arrasto geral.
+            """
+
+        if CL is None:
+            rho = self.get_density(altitude=altitude)
+            CL = (2 * W) / (S * rho * V ** 2)
+
+        CD = CD0 + K * CL ** 2
 
         return CD
 
     def calculate_general_thrust(self, altitude, thrust_factor, sea_level_thrust):
 
-        T = sea_level_thrust * (self.get_sima(altitude=altitude) ** thrust_factor)
+        T = sea_level_thrust * (self.get_sigma(altitude=altitude) ** thrust_factor)
         return T
 
     def cal(self, p0, t0, a, h0, h1):
@@ -44,7 +61,7 @@ class Aero:
         return t1, p1
 
     #https://gist.github.com/buzzerrookie/5b6438c603eabf13d07e
-    def get_density(self, altitude):
+    def get_density(self, altitude, temp=None):
         a = [-0.0065, 0, 0.001, 0.0028]
         h = [11000, 20000, 32000, 47000]
         p0 = 101325
@@ -65,17 +82,39 @@ class Aero:
         return density
 
 
-    def get_sima(self, altitude):
+    def get_sigma(self, altitude: float) -> float:
+
+        """
+        Calcula a razão de densidade do ar não-dimensional (sigma) em uma dada altitude.
+
+        Parâmetros:
+        - altitude (float): Altitude em metros.
+
+        Retorna:
+        float: Razão de densidade do ar não-dimensional (sigma).
+        """
 
         rho = self.get_density(altitude=altitude)
+        sigma = float(rho / self.rho_0)
 
-        return rho / self.rho_0
+        return sigma
 
-    def calculate_stall_velocity(self, W, rho, CL_max, S, logger):
+    def calculate_stall_velocity(self, W, rho, CL_max, S):
+
+        """
+        Calculates the stall velocity of an aircraft.
+
+        Parameters:
+        - W (float): Aircraft weight in Newtons.
+        - rho (float): Air density in kg/m^3.
+        - CL_max (float): Maximum coefficient of lift.
+        - S (float): Wing reference area in square meters.
+
+        Returns:
+        float: Stall velocity in meters per second.
+        """
 
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
-
-        logger.debug(f"Stall Velocity: {V_S}")
 
         return V_S
 
