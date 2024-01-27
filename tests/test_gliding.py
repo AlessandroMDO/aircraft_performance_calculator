@@ -8,7 +8,7 @@ sys.path.append(parent_dir)
 import unittest
 from functions.gliding import gliding_range_endurance
 import math
-class TestDistance(unittest.TestCase):
+class TestGliding(unittest.TestCase):
 
 
     def test_range_endurance_cl_constant(self):
@@ -50,7 +50,8 @@ class TestDistance(unittest.TestCase):
         assert math.floor(results['GLIDING_CONSTANT_AIRSPEED']['GLIDING_ENDURANCE_MAX_RANGE_CONSTANT_AIRSPEED']) == math.floor(13131.38)
 
 
-
+if __name__ == '__main__':
+    unittest.main()
 
 
 

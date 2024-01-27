@@ -2,7 +2,7 @@ import unittest
 import math
 
 from functions.takeoff import climb_angle
-class TestDistance(unittest.TestCase):
+class TestTakeoff(unittest.TestCase):
 
     def test_climb_angle(self):
 
