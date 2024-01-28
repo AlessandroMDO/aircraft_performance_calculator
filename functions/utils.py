@@ -79,3 +79,19 @@ def get_logger():
     logger = logging.getLogger()
 
     return logger
+
+
+def default_graph_colors():
+
+    colors = {
+        "blue": "#1D3D7B",
+        "black": "#000000",
+        "red":  "#E63946",
+        "medium_blue": "#457B9D",
+        "light_blue": "#A8DADC",
+        "light_white": "F1FAEE",
+        "green": "#43aa8b",
+        "dark_green": "#1b4332"
+    }
+
+    return colors
