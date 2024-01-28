@@ -55,11 +55,11 @@ def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, plot
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
-    PW = flight_parameters['PAYLOAD_WEIGHT']  # payload weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
 
     #todo: revizar este peso (MTOW - 50% do combustível ?)
-    MTOW = float(NP * aero.person_weight + OEW + FW + PW)
+    MTOW = float(NP * aero.person_weight + OEW + FW + CW)
     W = MTOW - 0.5 * FW  # MTOW - (50% do combustível)
 
     T = T0 * aircraft_parameters['NE']
