@@ -14,6 +14,7 @@ from db.utils.db_utils import *
 from functions.aero import Aero
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 from functions.takeoff import total_takeoff_distance, total_takeoff_time
+from functions.gliding import gliding_range_endurance
 
 class GUI_RESULTS(QMainWindow):
 
@@ -21,18 +22,23 @@ class GUI_RESULTS(QMainWindow):
 
         super(GUI_RESULTS, self).__init__()
 
+        self.display_cl_constant_graphs = None
+        self.result_gliding_cl_constant_max_endurance = None
+        self.result_gliding_cl_constant_default_endurance = None
+        self.result_gliding_cl_constant_max_range = None
+        self.result_gliding_cl_constant_default_range = None
+        self.result_gliding_cl_constant_max_range_value = 0
+        self.result_gliding_cl_constant_default_range_value = 0
+        self.result_takeoff_distance = 0
+        self.result_gliding_range_endurance = {}
         self.aero = Aero()
 
-        self.aircrafts_parameters = aircraft_parameters
+        self.aircraft_parameters = aircraft_parameters
         self.flight_parameters = flight_parameters
 
         self.logger = get_logger()
 
         self.background_path = background_path
-
-        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
-        self.airports, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
-        self.runway_condition_options, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select superficie from GroundType;")
 
         self.statusbar = None
         self.background = None
@@ -91,6 +97,7 @@ class GUI_RESULTS(QMainWindow):
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------- TAKEOFF DISTANCE VALUE -----------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
 
 
         self.result_takeoff_distance = QLabel(self.centralwidget)
@@ -104,6 +111,53 @@ class GUI_RESULTS(QMainWindow):
 
 
 
+        # ---------------------------------------------- GLIDING ------------------------------------------------------#
+        # -------------------------------------------------------------------------------------------------------------#
+
+        # ------------------------------------------    CL CONSTANT    ------------------------------------------------#
+        # -------------------------------------------------------------------------------------------------------------#
+
+        # Result Default Range
+        self.result_gliding_cl_constant_default_range = QLabel(self.centralwidget)
+        self.result_gliding_cl_constant_default_range.setObjectName(u"result_gliding_cl_constant_default_range")
+        self.result_gliding_cl_constant_default_range.setGeometry(QRect(179, 622, 75, 16))
+        self.result_gliding_cl_constant_default_range.setAlignment(Qt.AlignCenter)
+        self.result_gliding_cl_constant_default_range.setFont(font)
+        self.result_gliding_cl_constant_default_range.setText("0")
+
+        # Result Default Endurance
+        self.result_gliding_cl_constant_default_endurance = QLabel(self.centralwidget)
+        self.result_gliding_cl_constant_default_endurance.setObjectName(u"result_gliding_cl_constant_default_endurance")
+        self.result_gliding_cl_constant_default_endurance.setGeometry(QRect(179, 645, 75, 16))
+        self.result_gliding_cl_constant_default_endurance.setAlignment(Qt.AlignCenter)
+        self.result_gliding_cl_constant_default_endurance.setFont(font)
+        self.result_gliding_cl_constant_default_endurance.setText("0")
+
+        # Result Max Range
+        self.result_gliding_cl_constant_max_range = QLabel(self.centralwidget)
+        self.result_gliding_cl_constant_max_range.setObjectName(u"result_gliding_cl_constant_max_range")
+        self.result_gliding_cl_constant_max_range.setGeometry(QRect(179, 670, 75, 16))
+        self.result_gliding_cl_constant_max_range.setAlignment(Qt.AlignCenter)
+        self.result_gliding_cl_constant_max_range.setFont(font)
+        self.result_gliding_cl_constant_max_range.setText("0")
+
+        # Result Max Endurance
+        self.result_gliding_cl_constant_max_endurance = QLabel(self.centralwidget)
+        self.result_gliding_cl_constant_max_endurance.setObjectName(u"result_gliding_cl_constant_max_endurance")
+        self.result_gliding_cl_constant_max_endurance.setGeometry(QRect(179, 692, 75, 16))
+        self.result_gliding_cl_constant_max_endurance.setAlignment(Qt.AlignCenter)
+        self.result_gliding_cl_constant_max_endurance.setFont(font)
+        self.result_gliding_cl_constant_max_endurance.setText("0")
+
+
+        # -------------------------------------------------------------------------------------------------------------#
+        self.display_cl_constant_graphs = QPushButton(self.centralwidget)
+        self.display_cl_constant_graphs.setText("")  # Set an empty text to hide the label
+        self.display_cl_constant_graphs.setGeometry(QRect(62, 584, 33, 31))
+        self.display_cl_constant_graphs.setStyleSheet("border: none; background: none;")  # Hide border and background
+        self.display_cl_constant_graphs.clicked.connect(self.invoke_gliding_cl_constant_graphs)
+
+
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
@@ -114,6 +168,11 @@ class GUI_RESULTS(QMainWindow):
 
         self.background.raise_()
         self.result_takeoff_distance.raise_()
+        self.result_gliding_cl_constant_default_range.raise_()
+        self.display_cl_constant_graphs.raise_()
+        self.result_gliding_cl_constant_default_endurance.raise_()
+        self.result_gliding_cl_constant_max_endurance.raise_()
+        self.result_gliding_cl_constant_max_range.raise_()
 
 
 
@@ -131,13 +190,49 @@ class GUI_RESULTS(QMainWindow):
     def calculate_takeoff_distance(self):
 
         takeoff_parameters = self.flight_parameters['takeoff_parameters']
-        result_takeoff_distance = total_takeoff_distance(takeoff_parameters=takeoff_parameters, aircraft_parameters=self.aircrafts_parameters)
-        return result_takeoff_distance
+        self.result_takeoff_distance = total_takeoff_distance(takeoff_parameters=takeoff_parameters, aircraft_parameters=self.aircrafts_parameters)
 
 
+    def update_parameters(self, new_aircraft_parameters, new_flight_parameters):
+
+        self.aircraft_parameters = new_aircraft_parameters
+        self.flight_parameters = new_flight_parameters
+
+    def calculate_gliding_parameters(self):
+
+        self.result_gliding_range_endurance = gliding_range_endurance(flight_parameters=self.flight_parameters,
+                                                                      aircraft_parameters=self.aircraft_parameters,
+                                                                      graph_CL=True, graph_V=True)
+
+        self.gliding_cl_constant_graphs = self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_RANGE_ENDURANCE_CONSTANT_LIFT_GRAPH']
+
+        self.result_gliding_cl_constant_default_range_value = round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_RANGE_CONSTANT_LIFT_STANDARD'] / 1000, 2)
+        self.result_gliding_cl_constant_default_endurance_value = round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_ENDURANCE_CONSTANT_LIFT_STANDARD'] / 3600, 2)
+        self.result_gliding_cl_constant_max_endurance_value = round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_MAX_ENDURANCE_CONSTANT_LIFT'] / 3600, 2)
+        self.result_gliding_cl_constant_max_range_value = round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_MAX_RANGE_CONSTANT_LIFT'] / 1000, 2)
+
+        self.result_gliding_cl_constant_default_range.setText(str(self.result_gliding_cl_constant_default_range_value))
+        self.result_gliding_cl_constant_default_endurance.setText(str(self.result_gliding_cl_constant_default_endurance_value))
+        self.result_gliding_cl_constant_max_endurance.setText(str(self.result_gliding_cl_constant_max_endurance_value))
+        self.result_gliding_cl_constant_max_range.setText(str(self.result_gliding_cl_constant_max_range_value))
+
+    def invoke_gliding_cl_constant_graphs(self):
+
+        self.gliding_cl_constant_graphs.show()
+
+    def calculate_all_results(self):
+
+        # Takeoff
+        # self.calculate_takeoff_distance()
+
+        # Landing
 
 
+        # Cruise
 
+
+        # Gliding
+        self.calculate_gliding_parameters()
 
 
 
@@ -157,37 +252,6 @@ class GUI_RESULTS(QMainWindow):
         msg_box.exec_()
 
 
-    def save_current_aicraft_to_db(self):
-
-        result = self.get_aircraft_parameters()
-
-        if result['AIRCRAFT_NAME'] in self.aircrafts_parameters.keys():
-            self.warning_box(message='Aircraft already in the database. Give it another name.')
-
-        elif result['AIRCRAFT_NAME'] is None:
-            self.warning_box(message='The aircraft name must not be empty. Give it a name.')
-
-        else:
-
-            insert_query = f""" 
-            INSERT INTO airplanes 
-            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne) 
-            VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW'] / 1000}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0'] / 1000}, {result['NE']}) ;
-            """
-
-            insert_data_to_db(db_path=r"./db/utils/aero.db", query=insert_query)
-            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
-
-            self.aircraft_list_db.clear()
-
-            count_aircrafts = 0
-            for aircraft in self.aircrafts_parameters.keys():
-                self.aircraft_list_db.addItem("")
-                self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Results", f"{aircraft}", None))
-                count_aircrafts += 1
-
-            self.success_box(message='Aircraft successfully created!')
 
 
 if __name__ == "__main__":
