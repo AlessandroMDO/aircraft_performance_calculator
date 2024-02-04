@@ -14,17 +14,16 @@ from db.utils.db_utils import *
 from functions.aero import Aero
 from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 
-#TODO: implementar botao para deletar uma aeronave da base
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
     def __init__(self, background_path="guis/AIRCRAFT_PARAMETERS_800_800.png"):
 
         super(GUI_AIRCRAFT_PARAMETERS, self).__init__()
 
-        self.tsfc_value = None
-        self.oew_value = None
-        self.ne_value = None
-        self.e_value = None
+        self.tsfc_value = 1
+        self.oew_value = 300
+        self.ne_value = 2
+        self.e_value = 0.8
         self.aero = Aero()
 
         self.k = None
@@ -79,17 +78,17 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.centralwidget = QWidget(Aircraft_Parameters)
         self.centralwidget.setObjectName(u"centralwidget")
 
-        # palette = QPalette()
-        # brush = QBrush(QColor(255, 255, 255, 255))
-        # brush.setStyle(Qt.SolidPattern)
-        # palette.setBrush(QPalette.Active, QPalette.Base, brush)
-        # brush1 = QBrush(QColor(188, 188, 188, 255))
-        # brush1.setStyle(Qt.SolidPattern)
-        # palette.setBrush(QPalette.Active, QPalette.Window, brush1)
-        # palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        # palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
-        # palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
-        # palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
+        palette = QPalette()
+        brush = QBrush(QColor(255, 255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Base, brush)
+        brush1 = QBrush(QColor(188, 188, 188, 255))
+        brush1.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Window, brush1)
+        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
+        palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
+        palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
 
         font = QFont()
         font.setPointSize(10)
@@ -139,7 +138,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.aircraft_list_db.setFont(font)
         self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
         self.aircraft_list_db.setEditable(False)
-        # self.aircraft_list_db.setPalette(palette)
+        self.aircraft_list_db.setPalette(palette)
 
         count_aircrafts = 0
         for aircraft in self.aircrafts_parameters.keys():
@@ -209,25 +208,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cd0.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['cd0']))
 
         # --------------------------------------------------------------------------------------------------------------#
-        # ----------------------------------------------- K TEXT BOX ---------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-
-        # self.k = QTextEdit(self.centralwidget)
-        # self.k.setObjectName(u"k")
-        # self.k.setGeometry(QRect(251, 225, 112, 20))
-        # self.k.setFont(font)
-        # self.k.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
-        # self.k.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.k.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.k.setLineWrapMode(QTextEdit.FixedColumnWidth)
-        # self.k.setLineWrapColumnOrWidth(500000)
-        # self.k.setTabStopWidth(80)
-        # self.k.setAcceptRichText(True)
-        # self.k.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"K = 1/(pi * aspect_ratio * Oswald efficiency)", None))
-        # self.k.textChanged.connect(self.handle_k_value)
-        # self.k.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['k']))
-
-        # --------------------------------------------------------------------------------------------------------------#
         # ------------------------------------------- OSWALD NUMBER BOX ------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
@@ -242,6 +222,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.e.setLineWrapColumnOrWidth(500000)
         self.e.setTabStopWidth(80)
         self.e.setAcceptRichText(True)
+        self.e.setText(str(self.e_value))
         self.e.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Oswald efficiency)", None))
         self.e.textChanged.connect(self.handle_e_value)
         self.e.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['e']))
@@ -261,6 +242,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.oew.setLineWrapColumnOrWidth(500000)
         self.oew.setTabStopWidth(80)
         self.oew.setAcceptRichText(True)
+        self.oew.setText(str(self.oew_value))
         self.oew.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Operational Empty Weight)", None))
         self.oew.textChanged.connect(self.handle_oew_value)
         self.oew.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['oew']))
@@ -369,6 +351,12 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.create_db_button.setStyleSheet("border: none; background: none;")
         self.create_db_button.clicked.connect(self.save_current_aicraft_to_db)
 
+        self.delete_aircraft_db_button = QPushButton(self.centralwidget)
+        self.delete_aircraft_db_button.setText("")  # Set an empty text to hide the label
+        self.delete_aircraft_db_button.setGeometry(QRect(518, 738, 169, 39))
+        self.delete_aircraft_db_button.setStyleSheet("border: none; background: none;")
+        self.delete_aircraft_db_button.clicked.connect(self.delete_current_aicraft_from_db)
+
         # --------------------------------------------------------------------------------------------------------------#
         Aircraft_Parameters.setCentralWidget(self.centralwidget)
 
@@ -376,7 +364,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name.raise_()
         self.cl_max.raise_()
         self.cd0.raise_()
-        # self.k.raise_()
         self.e.raise_()
         self.oew.raise_()
         self.b.raise_()
@@ -386,6 +373,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.raise_()
         self.aircraft_list_db.raise_()
         self.create_db_button.raise_()
+        self.delete_aircraft_db_button.raise_()
 
         self.statusbar = QStatusBar(Aircraft_Parameters)
         self.statusbar.setObjectName(u"statusbar")
@@ -586,11 +574,11 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.current_aircraft_db = self.aircraft_list_db.currentText()
 
         self.new_aircraft_name.setPlainText(self.current_aircraft_db)
-        self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cd0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cd0']))
+        self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cl_max.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cl_max']))
         self.e.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['e']))
-        self.oew.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['oew']))
+        self.oew.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['oew'] / 1000))
         self.b.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['b']))
         self.tsfc.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['tsfc']))
         self.t0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['t0']))
@@ -620,13 +608,26 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         return result
 
-    def warning_box(self, message):
+    def warning_box(self, message, ok_and_decline=False):
 
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setText(message)
         msg_box.setWindowTitle('Warning')
-        msg_box.exec_()
+
+        if ok_and_decline is False:
+            msg_box.exec_()
+        else:
+            ok_button = QPushButton('Yes')
+            msg_box.addButton(ok_button, QMessageBox.AcceptRole)
+
+            decline_button = QPushButton('No')
+            msg_box.addButton(decline_button, QMessageBox.RejectRole)
+            result = msg_box.exec_()
+
+            return result
+
+
 
     def success_box(self, message):
         msg_box = QMessageBox()
@@ -634,6 +635,29 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         msg_box.setText(message)
         msg_box.setWindowTitle('Success')
         msg_box.exec_()
+
+    def delete_current_aicraft_from_db(self):
+
+        result = self.get_aircraft_parameters()
+        aircraft_name = result['AIRCRAFT_NAME']
+
+        if aircraft_name is not None:
+            result = self.warning_box(message=f"Are you sure you want to delete '{aircraft_name}' from the database ?\nThis action can't be undone.", ok_and_decline=True)
+            if result == 0:
+                delete_query = f"delete from airplanes where nome_aeronave = '{aircraft_name}'"
+                delete_db_query(db_path=r"./db/utils/aero.db", query=delete_query)
+
+                _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+
+                self.aircraft_list_db.clear()
+
+                count_aircrafts = 0
+                for aircraft in self.aircrafts_parameters.keys():
+                    self.aircraft_list_db.addItem("")
+                    self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+                    count_aircrafts += 1
+
+
 
 
     def save_current_aicraft_to_db(self):
