@@ -1,18 +1,13 @@
-import os
 import sys
-
-current_dir = os.path.dirname(os.path.realpath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
-from db.utils.db_utils import *
 from functions.aero import Aero
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QTextEdit
+from db.utils.db_utils import *
 
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
@@ -42,8 +37,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name = None
         self.background_path = background_path
 
-        # self.aircrafts = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select nome_aeronave, id from Airplanes;", first_value=False)
-        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db", query="select * from Airplanes;", first_value=False)
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None
@@ -578,20 +572,20 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cl_max.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cl_max']))
         self.e.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['e']))
-        self.oew.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['oew'] / 1000))
+        self.oew.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['oew'] / 1000, 3)))
         self.b.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['b']))
         self.tsfc.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['tsfc']))
-        self.t0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['t0']))
+        self.t0.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['t0'] /1000, 3)))
         self.ne.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['ne']))
 
         self.logger.debug(f"Current Aircraft DB: {self.current_aircraft_db}")
 
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
-    def get_aircraft_parameters(self):
+    def get_aircraft_parameters(self, convert_units=False):
 
         result = {
             'AIRCRAFT_NAME': self.text_aircraft_name,
-            'OEW': self.oew_value * 1000,
+            'OEW': self.oew_value * 1000 if convert_units is False else self.oew_value * 1000 * self.aero.g,
             'b': self.b_value,
             'e': self.e_value,
             'AR': (self.b_value ** 2) / self.wing_area_value,
@@ -645,9 +639,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             result = self.warning_box(message=f"Are you sure you want to delete '{aircraft_name}' from the database ?\nThis action can't be undone.", ok_and_decline=True)
             if result == 0:
                 delete_query = f"delete from airplanes where nome_aeronave = '{aircraft_name}'"
-                delete_db_query(db_path=r"./db/utils/aero.db", query=delete_query)
+                delete_db_query(db_path=r"./db/aero.db", query=delete_query)
 
-                _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+                _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select * from Airplanes;", first_value=False)
 
                 self.aircraft_list_db.clear()
 
@@ -676,11 +670,11 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             INSERT INTO airplanes 
             (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne) 
             VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW'] / 1000}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0'] / 1000}, {result['NE']}) ;
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}) ;
             """
 
-            insert_data_to_db(db_path=r"./db/utils/aero.db", query=insert_query)
-            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+            insert_data_to_db(db_path=r"./db/aero.db", query=insert_query)
+            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select * from Airplanes;", first_value=False)
 
             self.aircraft_list_db.clear()
 

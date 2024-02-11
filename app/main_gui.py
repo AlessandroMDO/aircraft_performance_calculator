@@ -1,9 +1,9 @@
-from PySide2.QtWidgets import QApplication, QMainWindow, QTabWidget, QPushButton, QWidget, QHBoxLayout, QAction, QTabBar
-from ui_takeoff_landing import GUI_DECOLAGEM
-from ui_aircraft_parameters import GUI_AIRCRAFT_PARAMETERS
-from ui_flight_conditions import GUI_FLIGHT_CONDITIONS
-from ui_results import GUI_RESULTS
+from PySide2.QtWidgets import QApplication, QMainWindow, QTabWidget, QPushButton, QTabBar
+from guis.ui_aircraft_parameters import GUI_AIRCRAFT_PARAMETERS
+from guis.ui_flight_conditions import GUI_FLIGHT_CONDITIONS
+from guis.ui_results import GUI_RESULTS
 from PySide2.QtCore import QRect
+
 
 
 
@@ -68,14 +68,15 @@ class MainWindow(QMainWindow):
             self.stacked_widget.insertTab(0, self.gui_aircraft_parameters, "")
             self.window_state["WINDOW_GUI_AIRCRAFT_PARAMETERS"] = self.gui_aircraft_parameters
 
-
+        else:
+            self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters(convert_units=True)
         self.stacked_widget.setCurrentWidget(self.window_state["WINDOW_GUI_AIRCRAFT_PARAMETERS"])
-        self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters()
+
 
     def create_gui_flight_conditions(self):
         if self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"] is None:
 
-            self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters()
+            self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters(convert_units=True)
             self.gui_flight_conditions = GUI_FLIGHT_CONDITIONS(aircraft_parameters_class=self.aircraft_parameters)
             self.gui_flight_conditions.setupUi(self.gui_flight_conditions)
 
@@ -84,23 +85,32 @@ class MainWindow(QMainWindow):
             self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"] = self.gui_flight_conditions
 
         else:
-            self.flight_parameters = self.gui_flight_conditions.get_flight_parameters()
+            self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters(convert_units=True)
+            self.gui_flight_conditions.update_parameters(new_aircraft_parameters=self.aircraft_parameters)
         self.stacked_widget.setCurrentWidget(self.window_state["WINDOW_GUI_FLIGHT_CONDITIONS"])
 
 
     def create_gui_results(self):
 
-        self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters()
+        self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters(convert_units=True)
         flight_parameters = self.gui_flight_conditions.get_flight_parameters()
 
         if self.window_state["WINDOW_GUI_RESULTS"] is None:
 
             self.gui_results = GUI_RESULTS(aircraft_parameters=self.aircraft_parameters, flight_parameters=flight_parameters)
             self.gui_results.setupUi(self.gui_results)
+            self.gui_results.calculate_all_results()
 
             self.create_buttons(ex=self.gui_results)
             self.stacked_widget.insertTab(2, self.gui_results, "")
             self.window_state["WINDOW_GUI_RESULTS"] = self.gui_results
+
+        else:
+            self.flight_parameters = self.gui_flight_conditions.get_flight_parameters()
+            self.aircraft_parameters = self.gui_aircraft_parameters.get_aircraft_parameters(convert_units=True)
+
+            self.gui_results.update_parameters(new_flight_parameters=self.flight_parameters, new_aircraft_parameters=self.aircraft_parameters)
+            self.gui_results.calculate_all_results()
 
         self.stacked_widget.setCurrentWidget(self.window_state["WINDOW_GUI_RESULTS"])
 

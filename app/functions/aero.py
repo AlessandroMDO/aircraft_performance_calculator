@@ -5,6 +5,8 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 import math
+from .utils import get_logger
+
 
 
 class Aero:
@@ -20,6 +22,7 @@ class Aero:
         self.minimum_breaking_constant = 0.15 * 9.81
         self.gamma_Ap = math.radians(3)
         self.person_weight = 75  # [kg]
+        self.logger = get_logger()
 
     def calculate_general_drag_coefficient(self, K, CD0, S=None, altitude=None, V=None, W=None, CL=None):
         """
@@ -68,7 +71,7 @@ class Aero:
         t0 = 288.15
         prevh = 0
         if altitude < 0 or altitude > 47000:
-            print("altitude must be in [0, 47000]")
+            self.logger.error("altitude must be in [0, 47000]")
             return
         for i in range(0, 4):
             if altitude <= h[i]:
@@ -94,10 +97,14 @@ class Aero:
         float: Razão de densidade do ar não-dimensional (sigma).
         """
 
-        rho = self.get_density(altitude=altitude)
-        sigma = float(rho / self.rho_0)
+        try:
+            rho = self.get_density(altitude=altitude)
+            sigma = float(rho / self.rho_0)
+            return sigma
+        except TypeError as error:
+            self.logger.error("Error while getting sigma value.")
 
-        return sigma
+
 
     def calculate_stall_velocity(self, W, rho, CL_max, S):
 
@@ -113,7 +120,7 @@ class Aero:
         Returns:
         float: Stall velocity in meters per second.
         """
-
+        # TODO: qual altitude/densidade usar aqui para calcular a velocidade de stall?
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
 
         return V_S

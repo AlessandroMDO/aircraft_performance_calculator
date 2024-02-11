@@ -2,7 +2,6 @@ from functools import wraps
 import logging
 from logging.config import dictConfig
 from functools import lru_cache
-from frozendict import frozendict
 
 
 def deep_freeze(thing):
@@ -95,3 +94,8 @@ def default_graph_colors():
     }
 
     return colors
+def linspace(a, b, n=100):
+    if n < 2:
+        return b
+    diff = (float(b) - a)/(n - 1)
+    return [diff * i + a  for i in range(n)]

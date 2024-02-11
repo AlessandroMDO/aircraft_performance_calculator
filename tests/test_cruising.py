@@ -6,7 +6,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 import unittest
-from functions.cruising_jet import get_cruise_velocity, cruising_jet_range, cruising_jet_endurance
+from app.functions.cruising_jet import get_cruise_velocity, cruising_jet_range, cruising_jet_endurance
 import math
 class TestGliding(unittest.TestCase):
 
@@ -28,7 +28,8 @@ class TestGliding(unittest.TestCase):
             "FUEL_WEIGHT": 0,
             "PAYLOAD_WEIGHT": 0,
             "DISPATCHED_CARGO_WEIGHT": 0,
-            "CRUISE_ALTITUDE": 38000 * 0.3048
+            "CRUISE_ALTITUDE": 38000 * 0.3048,
+            "CRUISE_VELOCITY": 0
 
         }
 
@@ -60,7 +61,8 @@ class TestGliding(unittest.TestCase):
             "FUEL_WEIGHT": 3200,
             "PAYLOAD_WEIGHT": 0,
             "DISPATCHED_CARGO_WEIGHT": 0,
-            "CRUISE_ALTITUDE": 9000
+            "CRUISE_ALTITUDE": 9000,
+            "CRUISE_VELOCITY": 800 / 3.6
 
         }
 
@@ -92,7 +94,8 @@ class TestGliding(unittest.TestCase):
             "FUEL_WEIGHT": 3200,
             "PAYLOAD_WEIGHT": 0,
             "DISPATCHED_CARGO_WEIGHT": 0,
-            "CRUISE_ALTITUDE": 9000
+            "CRUISE_ALTITUDE": 9000,
+            "CRUISE_VELOCITY": 800 / 3.6
 
         }
 

@@ -1,18 +1,17 @@
 import os
 import sys
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+# parent_dir = os.path.dirname(current_dir)
+# sys.path.append(parent_dir)
 
 import sys
 sys.path.append('functions')
 from functions.aero import Aero
-from functions.utils import default_graph_colors
+from functions.utils import default_graph_colors, linspace
 from functions.cruising_jet import get_cruise_velocity
-from numpy import linspace
+# from numpy import linspace
 import matplotlib.pyplot as plt
-import matplotlib
 
 import math
 
@@ -20,7 +19,7 @@ import math
 c = Aero()
 colors = default_graph_colors()
 
-def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitude=None, W=None, V_cru=None, plot=False, display=False):
+def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitude=None, W=None, V_gli=None, plot=False, display=False):
     """
     Calcula o ângulo de planagem e a taxa de descida de uma aeronave em planagem em uma determinada altitude.
 
@@ -57,9 +56,9 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
 
-    V_cru = flight_parameters['CRUISE_VELOCITY']
+    V_gli = flight_parameters['GLIDING_VELOCITY']
 
-    V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_cru is None else V_cru
+    V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
 
     altitude_cru = flight_parameters['CRUISE_ALTITUDE'] if altitude is None else altitude
     sigma = c.get_sigma(altitude=altitude_cru)
@@ -161,7 +160,7 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     #     }
 
 
-def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_cru=None, graph_V=False, graph_CL=False, display=False):
+def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gli=None, graph_V=False, graph_CL=False, display=False):
 
     """
     Calcula o alcance e a autonomia de uma aeronave em planagem entre duas altitudes.
@@ -322,9 +321,9 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_cr
 
     def gliding_range_endurance_constant_airspeed():
 
-        V_cru = flight_parameters['CRUISE_VELOCITY']
+        V_gli = flight_parameters['GLIDING_VELOCITY']
 
-        V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_cru is None else V_cru
+        V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
 
         def get_A_B(V_i):
 

@@ -23,8 +23,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from functions.aero import Aero
-from functions.utils import *
+from app.functions.aero import Aero
 import math
 
 c = Aero()

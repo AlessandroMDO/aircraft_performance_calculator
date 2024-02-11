@@ -9,12 +9,10 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from PySide2 import QtWidgets
-from functions.utils import get_logger
-from db.utils.db_utils import *
-from functions.aero import Aero
-from functions.landing import total_landing_distance, total_landing_time
-from functions.takeoff import total_takeoff_distance, total_takeoff_time
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from app.functions.utils import get_logger
+from app.functions.aero import Aero
+from app.functions.takeoff import total_takeoff_distance
+from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 
 
 

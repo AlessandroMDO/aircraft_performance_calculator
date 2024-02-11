@@ -1,21 +1,19 @@
 import os
 import sys
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
-sys.path.append('../functions')
+# current_dir = os.path.dirname(os.path.realpath(__file__))
+# parent_dir = os.path.dirname(current_dir)
+# sys.path.append(parent_dir)
+# sys.path.append('../functions')
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
-from db.utils.db_utils import *
 from functions.aero import Aero
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
-from functions.cruising_jet import cruising_jet_endurance, cruising_jet_range, get_cruise_velocity
-
+from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from db.utils.db_utils import *
 
 
 class GUI_FLIGHT_CONDITIONS(QMainWindow):
@@ -24,8 +22,12 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         super(GUI_FLIGHT_CONDITIONS, self).__init__()
 
-        self.cw_value = 0
-        self.np_value = 10
+        self.gliding_velocity_value = 20
+        self.cruise_velocity_value = 100
+        self.display_altitude_landing = None
+        self.result_gliding_range_endurance = {}
+        self.cw_value = 10 / 1000
+        self.np_value = 2
         self.airport_takeoff_parameters = None
 
         self.airport_landing_parameters = None
@@ -33,11 +35,9 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_landing_value = 0
         self.wind_velocity_landing_value = 0
         self.cruise_altitude_value = 11000
-        self.display_altitude_takeoff = ""
-        self.fw_value = 0
-        self.oew_value = 0
+        self.fw_value = 110 / 1000
+        self.oew_value = 300 / 1000
         self.ne_value = 1
-        self.e_value = 1
         self.aero = Aero()
         self.display_altitude_landing_value = None
 
@@ -59,9 +59,9 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.new_aircraft_name = None
         self.background_path = background_path
 
-        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
-        self.airports, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select iata, icao from Airports;", first_value=False)
-        self.runway_condition_options, _ = execute_generic_query(db_path=r"./db/utils/aero.db", query="select superficie from GroundType;")
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db", query="select * from Airplanes;", first_value=False)
+        self.airports, _ = execute_generic_query(db_path=r"db/aero.db", query="select iata, icao from Airports;", first_value=False)
+        self.runway_condition_options, _ = execute_generic_query(db_path=r"db/aero.db", query="select superficie from GroundType;")
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None
@@ -87,6 +87,22 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.background = None
         self.airport_list_takeoff = None
         self.centralwidget = None
+
+    def createToolTip(self, x, y, label_text, tooltip_text):
+        # Create a label
+        label = QLabel(label_text, self)
+        label.setGeometry(x, y, 150, 30)
+
+        # Connect the label's mouse hover event to the function to show tooltip
+        label.enterEvent = lambda event: QToolTip.showText(self.mapToGlobal(label.pos()), tooltip_text)
+
+
+    def create_char_format(self, color):
+        # Create a QTextCharFormat object with the desired text color
+        char_format = QTextCursor().charFormat()
+        char_format.setForeground(color)
+        return char_format
+
 
     def setupUi(self, Flight_Conditions):
         if not Flight_Conditions.objectName():
@@ -153,7 +169,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.np.setLineWrapMode(QTextEdit.FixedColumnWidth)
         self.np.setLineWrapColumnOrWidth(500000)
         self.np.setTabStopWidth(80)
-        self.np.setText("10")
+        self.np.setText(str(self.np_value))
         self.np.setAcceptRichText(True)
         self.np.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Number of passengers", None))
         self.np.textChanged.connect(self.handle_np_value)
@@ -172,6 +188,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.fw.setLineWrapMode(QTextEdit.FixedColumnWidth)
         self.fw.setLineWrapColumnOrWidth(500000)
         self.fw.setTabStopWidth(80)
+        self.fw.setText(str(self.fw_value))
         self.fw.setAcceptRichText(True)
         self.fw.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Fuel Weight", None))
         self.fw.textChanged.connect(self.handle_fw_value)
@@ -191,6 +208,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.cw.setLineWrapColumnOrWidth(500000)
         self.cw.setTabStopWidth(80)
         self.cw.setAcceptRichText(True)
+        self.cw.setText(str(self.cw_value))
         self.cw.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Dispatched Cargo Weight", None))
         self.cw.textChanged.connect(self.handle_cw_value)
 
@@ -251,7 +269,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.airport_list_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Select the departure airport", None))
         self.airport_list_takeoff.setCurrentIndex(1)
-        # self.handle_airport_list_takeoff_change()
         self.logger.debug(self.airport_list_takeoff.currentIndex())
 
         current_takeoff_airport = self.airport_list_takeoff.currentText()
@@ -302,7 +319,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_takeoff.setTabStopWidth(80)
         self.runway_slope_takeoff.setAcceptRichText(True)
         self.runway_slope_takeoff.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the runway slope.", None))
-        self.runway_slope_takeoff.setText("0")
+        self.runway_slope_takeoff.setText(str(self.runway_slope_takeoff_value))
         self.runway_slope_takeoff.textChanged.connect(self.handle_slope_takeoff_value)
 
         self.display_altitude_takeoff = QLabel(self.centralwidget)
@@ -417,7 +434,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.wind_velocity_landing.setTabStopWidth(80)
         self.wind_velocity_landing.setAcceptRichText(True)
         self.wind_velocity_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the wind velocity.", None))
-        self.wind_velocity_landing.setText("0")
+        self.wind_velocity_landing.setText(str(self.wind_velocity_landing_value))
         self.wind_velocity_landing.textChanged.connect(self.handle_wind_velocity_landing_value)
 
 
@@ -448,7 +465,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_landing.setTabStopWidth(80)
         self.runway_slope_landing.setAcceptRichText(True)
         self.runway_slope_landing.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Type the runway slope.", None))
-        self.runway_slope_landing.setText("0")
+        self.runway_slope_landing.setText(str(self.runway_slope_landing_value))
         self.runway_slope_landing.textChanged.connect(self.handle_slope_landing_value)
 
         # --------------------------------------------------------------------------------------------------------------#
@@ -505,8 +522,8 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         # -------------------------------------------------------------------------------------------------------------#
 
         self.cruise_altitude = QTextEdit(self.centralwidget)
-        self.cruise_altitude.setObjectName(u"runway_slope_landing")
-        self.cruise_altitude.setGeometry(QRect(600, 117, 95, 22))
+        self.cruise_altitude.setObjectName(u"cruise_altitude")
+        self.cruise_altitude.setGeometry(QRect(676, 117, 95, 22))
         self.cruise_altitude.setFont(font)
         self.cruise_altitude.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.cruise_altitude.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -516,18 +533,61 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.cruise_altitude.setTabStopWidth(80)
         self.cruise_altitude.setAcceptRichText(True)
         self.cruise_altitude.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Cruise altitude", None))
-        self.cruise_altitude.setText("11000")
+        self.cruise_altitude.setText(str(self.cruise_altitude_value))
         self.cruise_altitude.textChanged.connect(self.handle_cruise_altitude_value)
+
+
+        # -------------------------------------------------------------------------------------------------------------#
+        # ----------------------------------------- CRUISE VELOCITY TEXT BOX ------------------------------------------#
+        # -------------------------------------------------------------------------------------------------------------#
+
+        self.cruise_velocity = QTextEdit(self.centralwidget)
+        self.cruise_velocity.setObjectName(u"cruise_velocity")
+        self.cruise_velocity.setGeometry(QRect(676, 147, 95, 22))
+        self.cruise_velocity.setFont(font)
+        self.cruise_velocity.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.cruise_velocity.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cruise_velocity.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cruise_velocity.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.cruise_velocity.setLineWrapColumnOrWidth(500000)
+        self.cruise_velocity.setTabStopWidth(80)
+        self.cruise_velocity.setAcceptRichText(True)
+        self.cruise_velocity.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Cruise velocity. Type 0 if you want this value to be computed.", None))
+        self.cruise_velocity.setText(str(self.cruise_velocity_value))
+        self.cruise_velocity.textChanged.connect(self.handle_cruise_velocity_value)
+
+        self.createToolTip(x=463, y=152, label_text="", tooltip_text="Type 0 if you want this value to be computed.")
+
+
+        # -------------------------------------------------------------------------------------------------------------#
+        # ----------------------------------------- GLIDING VELOCITY TEXT BOX -----------------------------------------#
+        self.gliding_velocity = QTextEdit(self.centralwidget)
+        self.gliding_velocity.setObjectName(u"gliding_velocity")
+        self.gliding_velocity.setGeometry(QRect(676, 177, 95, 22))
+        self.gliding_velocity.setFont(font)
+        self.gliding_velocity.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.gliding_velocity.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.gliding_velocity.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.gliding_velocity.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.gliding_velocity.setLineWrapColumnOrWidth(500000)
+        self.gliding_velocity.setTabStopWidth(80)
+        self.gliding_velocity.setAcceptRichText(True)
+        self.gliding_velocity.setToolTip(QCoreApplication.translate("Flight_Conditions", u"Gliding velocity", None))
+        self.gliding_velocity.setText(str(self.gliding_velocity_value))
+        self.gliding_velocity.textChanged.connect(self.handle_gliding_velocity_value)
+
+
+        # -------------------------------------------------------------------------------------------------------------#
 
         # -------------------------------------------------------------------------------------------------------------#
         # ----------------------------------------- RUN ANALYSIS ------------------------------------------------------#
         # -------------------------------------------------------------------------------------------------------------#
 
-        self.run_analysis_button = QPushButton(self.centralwidget)
-        self.run_analysis_button.setText("")  # Set an empty text to hide the label
-        self.run_analysis_button.setGeometry(QRect(316, 721, 168, 44))
-        self.run_analysis_button.setStyleSheet("border: none; background: none;")
-        self.run_analysis_button.clicked.connect(self.invoke_analysis)
+        # self.run_analysis_button = QPushButton(self.centralwidget)
+        # self.run_analysis_button.setText("")  # Set an empty text to hide the label
+        # self.run_analysis_button.setGeometry(QRect(316, 721, 168, 44))
+        # self.run_analysis_button.setStyleSheet("border: none; background: none;")
+        # self.run_analysis_button.clicked.connect(self.invoke_analysis)
 
 
 
@@ -610,7 +670,10 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_landing.raise_()
         self.runway_condition_landing.raise_()
         self.cruise_altitude.raise_()
-        self.run_analysis_button.raise_()
+        # self.run_analysis_button.raise_()
+        self.cruise_velocity.raise_()
+        self.gliding_velocity.raise_()
+        # self.cruise_velocity_tooltip.raise_()
 
 
 
@@ -699,6 +762,42 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.logger.debug(f"Cruise altitude [m]: {self.cruise_altitude_value}")
 
+    def handle_cruise_velocity_value(self):
+
+        text_cruise_velocity = self.cruise_velocity.toPlainText()
+
+        if not text_cruise_velocity:
+            self.cruise_velocity.setPlainText("0")
+        else:
+            try:
+                cruise_velocity = float(text_cruise_velocity)
+                if 0 <= cruise_velocity < 1000000:
+                    self.cruise_velocity_value = cruise_velocity
+                else:
+                    self.cruise_velocity.clear()
+            except ValueError:
+                self.cruise_velocity.clear()
+
+        self.logger.debug(f"Cruise velocity [m/s]: {self.cruise_velocity_value}")
+    def handle_gliding_velocity_value(self):
+
+        text_gliding_velocity = self.gliding_velocity.toPlainText()
+
+        if not text_gliding_velocity:
+            self.gliding_velocity.setPlainText("10")
+        else:
+            try:
+                gliding_velocity = float(text_gliding_velocity)
+
+                if 1 <= gliding_velocity < 1000000:
+                    self.gliding_velocity_value = gliding_velocity
+                else:
+                    self.gliding_velocity.clear()
+            except ValueError:
+                self.gliding_velocity.clear()
+
+        self.logger.debug(f"Gliding velocity [m/s]: {self.gliding_velocity_value}")
+
     def handle_wind_velocity_takeoff_value(self):
 
         text_value_wind_velocity = self.wind_velocity_takeoff.toPlainText()
@@ -774,7 +873,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
     def calculate_runway_takeoff_condition_parameter(self):
         self.runway_condition_takeoff_mu, _ = execute_generic_query(
-            db_path=r"./db/utils/aero.db",
+            db_path=r"db/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_takeoff_text}';")
 
 
@@ -845,7 +944,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
     def calculate_runway_landing_condition_parameter(self):
 
         self.runway_condition_landing_mu, _ = execute_generic_query(
-            db_path=r"./db/utils/aero.db",
+            db_path=r"db/aero.db",
             query=f"select (min_mu_decolagem + max_mu_decolagem)/2 from GroundType where superficie='{self.runway_condition_landing_text}';")
 
 
@@ -856,7 +955,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.logger.debug(self.current_takeoff_airport_iata is None)
 
         airport_takeoff_results, _ = execute_generic_query(
-            db_path=r"./db/utils/aero.db",
+            db_path=r"db/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code, aeroporto from airports where iata='{self.current_takeoff_airport_iata}';",
             first_value=False)
 
@@ -871,7 +970,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
     def calculate_landing_airport_parameters(self):
         airport_landing_results, _ = execute_generic_query(
-            db_path=r"./db/utils/aero.db",
+            db_path=r"db/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code, aeroporto from airports where iata='{self.current_landing_airport_iata}';",
             first_value=False)
 
@@ -884,18 +983,20 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             self.airport_landing_parameters['AIRPORT_NAME']                     = airport_landing_results[0][5]
 
 
-    def invoke_analysis(self):
+    # def invoke_analysis(self):
+    #     pass
+        # flight_parameters = self.get_flight_parameters()
+        # result_cruise_velocity = get_cruise_velocity(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
+        # result_cruising_jet_range = cruising_jet_range(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters)
+        # self.result_gliding_range_endurance = gliding_range_endurance(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, graph_CL=True, graph_V=True, display=False)
+        #
+        # self.logger.debug(f"Parâmetros:\n{flight_parameters}")
+        # self.logger.debug(f"Cruise Velocity:\n{result_cruise_velocity}")
+        # self.logger.debug(f"Cruising Jet Range:\n{result_cruising_jet_range}")
+        # self.logger.debug(f"Gliding Parameters:\n{self.result_gliding_range_endurance}")
 
-        flight_parameters = self.get_flight_parameters()
-        result_cruise_velocity = get_cruise_velocity(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
-        result_cruising_jet_range = cruising_jet_range(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters)
-
-
-        self.logger.debug(f"Parâmetros:\n{flight_parameters}")
-        self.logger.debug(f"Cruise Velocity:\n{result_cruise_velocity}")
-        self.logger.debug(f"Cruising Jet Range:\n{result_cruising_jet_range}")
-
-
+    def update_parameters(self, new_aircraft_parameters):
+        self.aircraft_parameters = new_aircraft_parameters
 
 
 
@@ -926,12 +1027,12 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
                 "MU_LANDING": self.runway_condition_landing_mu
             },
             "CRUISE_ALTITUDE": self.cruise_altitude_value,
+            "CRUISE_VELOCITY": self.cruise_velocity_value,
+            "GLIDING_VELOCITY": self.gliding_velocity_value,
             "NUMBER_OF_PASSENGERS": self.np_value,
-            "FUEL_WEIGHT": self.fw_value * 1000,
-            "DISPATCHED_CARGO_WEIGHT": self.cw_value * 1000,
-            "PAYLOAD_WEIGHT": self.cw_value * 1000 + 80 * self.np_value
-
-
+            "FUEL_WEIGHT": (self.fw_value * 1000) * self.aero.g,
+            "DISPATCHED_CARGO_WEIGHT": (self.cw_value * 1000) * self.aero.g,
+            "PAYLOAD_WEIGHT": (self.cw_value * 1000 + self.aero.person_weight * self.np_value) * self.aero.g
 
         }
 

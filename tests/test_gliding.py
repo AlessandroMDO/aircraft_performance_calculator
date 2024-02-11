@@ -6,7 +6,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 import unittest
-from functions.gliding import gliding_range_endurance, gliding_angle_rate_of_descent
+from app.functions.gliding import gliding_range_endurance, gliding_angle_rate_of_descent
 import math
 class TestGliding(unittest.TestCase):
 
@@ -28,7 +28,7 @@ class TestGliding(unittest.TestCase):
             "DISPATCHED_CARGO_WEIGHT": 0,
             "landing_parameters": {'ALTITUDE_LANDING': 0},
             "CRUISE_ALTITUDE": 4000,
-            "CRUISE_VELOCITY": 25
+            "GLIDING_VELOCITY": 25
         }
 
         results = gliding_range_endurance(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters,
@@ -70,7 +70,7 @@ class TestGliding(unittest.TestCase):
             "FUEL_WEIGHT": 0,
             "PAYLOAD_WEIGHT": 0,
             "DISPATCHED_CARGO_WEIGHT": 0,
-            "CRUISE_VELOCITY": 30
+            "GLIDING_VELOCITY": 30
         }
 
         results_1 = gliding_angle_rate_of_descent(aircraft_parameters=aircraft_parameters_1,

@@ -33,11 +33,11 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
 from functions.aero import Aero
-from functions.utils import *
+from .utils import get_logger
 import math
-from functools import lru_cache
 
 c = Aero()
+logger = get_logger()
 
 
 # @hash_dict
@@ -59,6 +59,11 @@ def climb_angle(T, D, W):
     try:
         num = T-D
         gamma = math.asin(num / W)  # [rad]
+
+        if gamma > 0.0610:
+            gamma = math.radians(3.5)
+
+        logger.debug(f"Gamma: {math.degrees(gamma)}")
     except ValueError:
         gamma = math.radians(3)
     return gamma
@@ -76,12 +81,14 @@ def ground_run_acceleration(W_takeoff, mu, V_S, altitude, S, K, CD0, CL_max, T0,
 
     V_L0 = 1.15 * V_S
     rho = c.get_density(altitude=altitude)
+
     CL_L0 = 0.8 * CL_max
+
     V = 0.7 * V_L0
 
     q = (rho * V ** 2) / 2
     L = CL_L0 * q * S
-    D = (CD0 + K * CL_L0 ** 2) * q * S
+    D = 0.5 * rho * (V ** 2) * S * CD0 + 2 * K * S * ((W_takeoff/S)**2) * 1 / (rho * V**2)
 
     T = c.calculate_general_thrust(altitude=altitude, sea_level_thrust=T0, thrust_factor=thrust_factor)
     a = (c.g / W_takeoff) * (T - D - mu * (W_takeoff - L))  # [m/s^2]
@@ -232,16 +239,22 @@ def climb_time(T, D, V_S, W):
 # -------------------------------------------------------------------------------------------------------------------- #
 
 #TODO: ajustar input
-def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
+def total_takeoff_distance(flight_parameters, aircraft_parameters, show=False):
 
-    V_wind        = takeoff_parameters['WIND_VELOCITY_TAKEOFF']
-    theta_runway  = takeoff_parameters['RUNWAY_SLOPE_TAKEOFF']
-    altitude      = takeoff_parameters['ALTITUDE_TAKEOFF']
-    mu            = takeoff_parameters['MU_TAKEOFF']
+    #TODO: implementar uma tabela do pandas mostrando a variação conforme altitude ?
 
-    D             = takeoff_parameters['D'] #TODO Como calcular esse arrasto ?
+    V_wind        = flight_parameters['takeoff_parameters']['WIND_VELOCITY_TAKEOFF']
+    theta_runway  = math.radians(flight_parameters['takeoff_parameters']['RUNWAY_SLOPE_TAKEOFF'])
+    altitude      = flight_parameters['takeoff_parameters']['ALTITUDE_TAKEOFF']
+    mu            = flight_parameters['takeoff_parameters']['MU_TAKEOFF']
 
-    W             = aircraft_parameters['MTOW']
+    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    OEW = aircraft_parameters['OEW']
+
+    MTOW = float(NP * c.person_weight + OEW + FW + CW)
+
     S             = aircraft_parameters['S']
     K             = aircraft_parameters['K']
     CD0           = aircraft_parameters['CD0']
@@ -251,22 +264,33 @@ def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
     thrust_factor = aircraft_parameters['TSFC']
 
     rho = c.get_density(altitude=altitude)
-    V_S = c.calculate_stall_velocity(W=W, CL_max=CL_max, S=S, rho=rho)  # TODO: qual altitude/densidade usar aqui para calcular a velocidade de stall?
+    V_S = c.calculate_stall_velocity(W=MTOW, CL_max=CL_max, S=S, rho=rho)
+
+    V_L0 = 1.15 * V_S
+    V = 0.7 * V_L0
+    D = 0.5 * rho * (V ** 2) * S * CD0 + 2 * K * S * ((MTOW / S) ** 2) * 1 / (rho * V ** 2)
 
 
-    x_g = ground_run_distance(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S, K=K, CD0=CD0, CL_max=CL_max, T0=T, thrust_factor=thrust_factor)
+    x_g = ground_run_distance(V_S=V_S, W=MTOW, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S, K=K, CD0=CD0, CL_max=CL_max, T0=T, thrust_factor=thrust_factor)
+    logger.debug(f"Ground Distance: {x_g}")
+
     x_r = rotation_distance(V_S=V_S)
-    x_cl = climb_distance(T=T, D=D, V_S=V_S, W=W)
-    x_tr = transition_distance(V_S=V_S, T=T, D=D, W=W)
+    logger.debug(f"Rotation Distance: {x_r}")
+
+    x_cl = climb_distance(T=T, D=D, V_S=V_S, W=MTOW)
+    logger.debug(f"Climb Distance: {x_cl}")
+
+    x_tr = transition_distance(V_S=V_S, T=T, D=D, W=MTOW)
+    logger.debug(f"Transition Distance: {x_tr}")
 
     x_to = x_g + x_r + x_tr + x_cl  # [m]
 
     takeoff_distance_result = {
-        "takeoff_distance": x_to,
-        "takeoff_ground_distance": x_g,
-        "takeoff_rotation_distance": x_r,
-        "takeoff_transition_distance": x_tr,
-        "takeoff_climb_distance": x_cl}
+        "TAKEOFF_DISTANCE": x_to,
+        "TAKEOFF_GROUND_DISTANCE": x_g,
+        "TAKEOFF_ROTATION_DISTANCE": x_r,
+        "TAKEOFF_TRANSITION_DISTANCE": x_tr,
+        "TAKEOFF_CLIMB_DISTANCE": x_cl}
 
     if show:
         print_formatted_string(how="top")
@@ -281,19 +305,13 @@ def total_takeoff_distance(takeoff_parameters, aircraft_parameters, show=False):
     return takeoff_distance_result
 
 
-def total_takeoff_time(takeoff_parameters, flight_parameters, aircraft_parameters, show=False):
+def total_takeoff_time(flight_parameters, aircraft_parameters, show=False):
 
-    V_wind          = takeoff_parameters['WIND_VELOCITY_TAKEOFF']
-    theta_runway    = takeoff_parameters['RUNWAY_SLOPE_TAKEOFF']
-    altitude        = takeoff_parameters['ALTITUDE_TAKEOFF']
-    mu              = takeoff_parameters['MU_TAKEOFF']
+    V_wind          = flight_parameters['takeoff_parameters']['WIND_VELOCITY_TAKEOFF']
+    theta_runway    = math.radians(flight_parameters['takeoff_parameters']['RUNWAY_SLOPE_TAKEOFF'])
+    altitude        = flight_parameters['takeoff_parameters']['ALTITUDE_TAKEOFF']
+    mu              = flight_parameters['takeoff_parameters']['MU_TAKEOFF']
 
-    D               = takeoff_parameters['D'] #TODO: qual arrasto usar?
-
-    NP              = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
-    FW              = flight_parameters['FUEL_WEIGHT']  # fuel weight
-    PW              = flight_parameters['PAYLOAD_WEIGHT']  # payload weight
-    OEW             = aircraft_parameters['OEW']
     S               = aircraft_parameters['S']
     K               = aircraft_parameters['K']
     CD0             = aircraft_parameters['CD0']
@@ -302,12 +320,20 @@ def total_takeoff_time(takeoff_parameters, flight_parameters, aircraft_parameter
     thrust_factor   = aircraft_parameters['TSFC']
     T               = T0 * aircraft_parameters['NE']
 
-    MTOW            = float(NP * c.person_weight + OEW + FW + PW)
+    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    OEW = aircraft_parameters['OEW']
+
+    MTOW            = float(NP * c.person_weight + OEW + FW + CW)
     W               = MTOW
 
     rho = c.get_density(altitude=altitude)
+    V_S = c.calculate_stall_velocity(W=W, CL_max=CL_max, S=S, rho=rho)
 
-    V_S = c.calculate_stall_velocity(W=W, CL_max=CL_max, S=S, rho=rho) #TODO: qual altitude/densidade usar aqui para calcular a velocidade de stall?
+    V_L0 = 1.15 * V_S
+    V = 0.7 * V_L0
+    D = 0.5 * rho * (V ** 2) * S * CD0 + 2 * K * S * ((MTOW / S) ** 2) * 1 / (rho * V ** 2)
 
     t_g = ground_run_time(V_S=V_S, W=W, mu=mu, V_wind=V_wind, theta_runway=theta_runway, CD0=CD0, K=K, S=S, altitude=altitude, CL_max=CL_max, T0=T, thrust_factor=thrust_factor)
     t_r = rotation_time()
@@ -317,11 +343,11 @@ def total_takeoff_time(takeoff_parameters, flight_parameters, aircraft_parameter
     t_to = t_g + t_r + t_tr + t_cl  # [s]
 
     takeoff_time_result = {
-        "takeoff_time": t_to,
-        "takeoff_ground_time": t_g,
-        "takeoff_rotation_time": t_r,
-        "takeoff_transition_time": t_tr,
-        "takeoff_climb_time": t_cl}
+        "TAKEOFF_TIME": t_to,
+        "TAKEOFF_GROUND_TIME": t_g,
+        "TAKEOFF_ROTATION_TIME": t_r,
+        "TAKEOFF_TRANSITION_TIME": t_tr,
+        "TAKEOFF_CLIMB_TIME": t_cl}
 
     if show:
         print_formatted_string(how="top")
@@ -337,5 +363,3 @@ def total_takeoff_time(takeoff_parameters, flight_parameters, aircraft_parameter
 
 
 # Estratégias de otimização para a distância de decolagem estão na página 389.
-# total_takeoff_distance(T=200, D=100, L=1000, W=700, mu=0.3, V_S=30, V_wind=30, theta_runway=0,show=True, altitude=1000, S = 40, K=0.3)
-# total_takeoff_time(T=200, D=100, L=1000, W=700, mu=0.3, V_S=30, V_wind=30,theta_runway=0,show=False)

@@ -1,23 +1,6 @@
 import sqlite3
-# from sqlmodel import Field, SQLModel, Session, create_engine
-from db.utils.entities import *
-# import pandas as pd
 
-
-# def create_db_engine():
-#     sqlite_file_name = "aero.db"
-#     sqlite_url = f"sqlite:///{sqlite_file_name}"
-#     engine = create_engine(url=sqlite_url, echo=True)
-#
-#     return engine
-
-
-# def create_db_and_tables():
-#     engine = create_db_engine()
-#     SQLModel.metadata.create_all(engine)
-
-
-def get_con(db_path="aero.db"):
+def get_con(db_path="db/aero.db"):
     con = sqlite3.connect(db_path)
     return con
 
