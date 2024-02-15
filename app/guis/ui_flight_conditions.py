@@ -12,6 +12,7 @@ from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
 from functions.aero import Aero
+from functions.plot_geo import get_map
 from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 from db.utils.db_utils import *
 
@@ -154,6 +155,16 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.background.setAlignment(Qt.AlignCenter)
         self.background.setIndent(0)
         self.background.setText("")
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # --------------------------------------------- MAP BUTTON -----------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.invoke_map_button = QPushButton(self.centralwidget)
+        self.invoke_map_button.setText("")
+        self.invoke_map_button.setGeometry(QRect(356, 536, 89, 81))
+        self.invoke_map_button.setStyleSheet("border: none; background: none;")
+        self.invoke_map_button.clicked.connect(self.invoke_map)
 
         # --------------------------------------------------------------------------------------------------------------#
         # ----------------------------------- NUMBER OF PASSANGERS NUMBER BOX ------------------------------------------#
@@ -673,6 +684,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         # self.run_analysis_button.raise_()
         self.cruise_velocity.raise_()
         self.gliding_velocity.raise_()
+        self.invoke_map_button.raise_()
         # self.cruise_velocity_tooltip.raise_()
 
 
@@ -844,6 +856,18 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             self.display_runway_lenght_takeoff.setText(self.display_runway_lenght_takeoff_value)
             self.display_airport_name_takeoff.setText(self.display_airport_name_takeoff_value)
 
+    def invoke_map(self):
+
+        latitude_takeoff = self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LATITUDE']
+        lontitude_takeoff = self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE']
+        latitude_landing = self.airport_landing_parameters['AIRPORT_LANDING_LATITUDE']
+        longitude_landing = self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE']
+        airport_takeoff = self.airport_takeoff_parameters['AIRPORT_NAME']
+        airport_landing = self.airport_landing_parameters['AIRPORT_NAME']
+
+        fig = get_map(latitude_takeoff, lontitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing)
+        fig.show()
+
     def handle_airport_list_landing_change(self):
 
         current_landing_airport = self.airport_list_landing.currentText()
@@ -981,19 +1005,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE']        = airport_landing_results[0][3]
             self.airport_landing_parameters['AIRPORT_IATA_CODE']                = airport_landing_results[0][4]
             self.airport_landing_parameters['AIRPORT_NAME']                     = airport_landing_results[0][5]
-
-
-    # def invoke_analysis(self):
-    #     pass
-        # flight_parameters = self.get_flight_parameters()
-        # result_cruise_velocity = get_cruise_velocity(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
-        # result_cruising_jet_range = cruising_jet_range(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters)
-        # self.result_gliding_range_endurance = gliding_range_endurance(flight_parameters=flight_parameters, aircraft_parameters=self.aircraft_parameters, graph_CL=True, graph_V=True, display=False)
-        #
-        # self.logger.debug(f"Parâmetros:\n{flight_parameters}")
-        # self.logger.debug(f"Cruise Velocity:\n{result_cruise_velocity}")
-        # self.logger.debug(f"Cruising Jet Range:\n{result_cruising_jet_range}")
-        # self.logger.debug(f"Gliding Parameters:\n{self.result_gliding_range_endurance}")
 
     def update_parameters(self, new_aircraft_parameters):
         self.aircraft_parameters = new_aircraft_parameters
