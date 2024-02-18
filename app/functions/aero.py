@@ -120,6 +120,7 @@ class Aero:
         Returns:
         float: Stall velocity in meters per second.
         """
+
         # TODO: qual altitude/densidade usar aqui para calcular a velocidade de stall?
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
 

@@ -26,27 +26,14 @@ from .aero import Aero
 
 aero = Aero()
 
-def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_STALL=None, T_CRUISE=None, plot=False, display=False):
-
-    """
-        Calcula a velocidade de cruzeiro de uma aeronave com base nos parâmetros da aeronave, altitude e peso.
-
-        Parâmetros:
-        - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'ZERO_THRUST', 'SURFACE_AREA', 'CD0', 'K', 'THRUST_FACTOR', e 'CL_MAX'.
-        - altitude: Altitude em metros.
-        - W: Peso da aeronave em Newtons. # TODO qual peso usar aqui?
-        - plot: Um sinalizador booleano que indica se deve ser gerado um gráfico de empuxo e arrasto (opcional, padrão é False).
-
-        Retorna:
-        - V_cru: Velocidade de cruzeiro em metros por segundo.
-        - fig_cruzeiro: (Opcional) Figura do gráfico de empuxo e arrasto, gerada apenas se plot for True.
-        """
+def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_STALL=None, T_CRUISE=None, plot=False, display=False):
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
     sigma = aero.get_sigma(altitude=altitude)
 
     rho_0  = aero.rho_0
     T0     = aircraft_parameters['T0']
+    T      = T0 * aircraft_parameters['NE']
     S      = aircraft_parameters['S']
     CD0    = aircraft_parameters['CD0']
     K      = aircraft_parameters['K']
@@ -61,8 +48,6 @@ def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CR
     MTOW = float(NP * aero.person_weight + OEW + FW + CW)
     # MTOW - (50% do combustível)
     W = MTOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
-
-    T = T0 * aircraft_parameters['NE']
 
     T_CRU = aero.calculate_general_thrust(altitude=altitude, sea_level_thrust=T, thrust_factor=n) if T_CRUISE is None else T_CRUISE
 
@@ -85,8 +70,6 @@ def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CR
         V_cru = max(V_cru_1, V_cru_2) if (V_cru_1 > V_S and V_cru_2 > V_S) else V_cru_1 if (V_cru_1 > V_S > V_cru_2) else V_cru_2
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
-
-
 
     D_min = (2 * W) * (K * CD0) ** 0.5
 
@@ -113,11 +96,11 @@ def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CR
         plt.plot(v_range, [i / 1e3 for i in lista_arrasto_total], c='black', label="Total Drag")
         plt.plot(v_range, [i / 1e3 for i in lista_arrasto_parasita], c='black', ls='--', label="Parasitic Drag")
         plt.plot(v_range, [i / 1e3 for i in lista_arrasto_induzido], c='black', ls='-.', label="Induced Drag")
-        plt.plot(v_range, [T_CRU / 1e3] * len(v_range), label="Empuxo", ls=(0, (5, 10)), color='black')
+        plt.plot(v_range, [T_CRU / 1e3] * len(v_range), label="Thrust", ls=(0, (5, 10)), color='black')
         plt.scatter(v_range[lista_arrasto_total.index(min(lista_arrasto_total))], min(lista_arrasto_total) / 1e3, c='black', label=f"Minimum Drag = {round(D_min / 1e3, 2)}")
         plt.xlabel("Velocity [m/s]", size=12)
         plt.ylabel("Drag [kN]", size=12)
-        plt.title("Relação empuxo e arrasto por velocidade")
+        plt.title("Thrust and drag per velocity")
         plt.grid()
         plt.legend()
 
@@ -131,13 +114,13 @@ def get_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CR
         "CRUISE_VELOCITY": V_cru,
         "MINIMUM_DRAG": D_min,
         "CRUISE_VELOCITIES": [V_cru_1, V_cru_2],
-        "CRUISE_DRAG_GRAPH": fig_cruzeiro if display is True else None
+        "CRUISE_DRAG_GRAPH": fig_cruzeiro if plot is True else None
     }
 
     return result
 
 
-def cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, W_CRUISE=None, zeta_CRUISE=None, plot=False, display=False):
+def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, W_CRUISE=None, zeta_CRUISE=None, plot=False, display=False):
 
     # 9.3.1 - Maximum Range of constant altitude-constant lift coefficient flight (página 239)
     # 9.3.2 - Maximum Range of constant airspeed-constant lift coefficient flight (página 241)
@@ -163,7 +146,7 @@ def cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRU
     Se show for True, também exibe os resultados formatados.
 
     Notas:
-    - A função assume que a função get_cruise_velocity() está definida e disponível no escopo.
+    - A função assume que a função calc_cruise_velocity() está definida e disponível no escopo.
     """
 
     c = aircraft_parameters['TSFC']
@@ -173,7 +156,7 @@ def cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRU
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
-        V_cru = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
 
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
@@ -257,18 +240,6 @@ def cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRU
         "MAX_RANGE_CONSTANT_HEIGHT_VELOCITY": round(x_mr_h_V, 2)
     }
 
-    if plot:
-        print_formatted_string(how="top")
-        print_formatted_string(input_string=f'CRUISING JET RANGE', how="center")
-        print_formatted_string()
-        print_formatted_string(input_string=f'CASE 1 - ALTITUDE & CL CONSTANTS: {round(x_h_CL / 1000, 2)} [km]',
-                               how="left")
-        print_formatted_string(input_string=f'CASE 2 - VELOCITY & CL CONSTANTS: {round(x_V_CL / 1000, 2)} [km]',
-                               how="left")
-        print_formatted_string(input_string=f'CASE 3 - ALTITUDE & CL CONSTANTS: {round(x_h_V / 1000, 2)} [km]',
-                               how="left")
-        print_formatted_string(how="bottom")
-
     return ranges
 
 
@@ -277,7 +248,7 @@ def cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRU
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
-def cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_CRUISE=None, zeta_CRUISE=None, show=False):
+def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_CRUISE=None, zeta_CRUISE=None, show=False):
 
     logger = get_logger()
 
@@ -287,7 +258,7 @@ def cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
-        V_cru = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
 
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
@@ -358,18 +329,6 @@ def cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W
         "MAX_ENDURANCE_CONSTANT_HEIGHT_VELOCITY": t_m_h_V
     }
 
-    if show:
-        print_formatted_string(how="top")
-        print_formatted_string(input_string=f'CRUISING JET ENDURANCE', how="center")
-        print_formatted_string()
-        print_formatted_string(input_string=f'CASE 1 - ALTITUDE & CL CONSTANTS: {round(t_h_CL / 3600, 2)} [h]',
-                               how="left")
-        print_formatted_string(input_string=f'CASE 2 - VELOCITY & CL CONSTANTS: {round(t_V_CL / 3600, 2)} [h]',
-                               how="left")
-        print_formatted_string(input_string=f'CASE 3 - ALTITUDE & CL CONSTANTS: {round(t_h_V / 3600, 2)} [h]',
-                               how="left")
-        print_formatted_string(how="bottom")
-
     return endurance
 
 
@@ -378,9 +337,10 @@ def cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
+#TODO: Ajustar gráfico payload x range
 def payload_x_range(aircraft_parameters: dict, flight_parameters: dict):
 
-    #TODO: Ajustar esta função
+
 
     n = aircraft_parameters['TSFC']
     S = aircraft_parameters['S']
@@ -391,7 +351,7 @@ def payload_x_range(aircraft_parameters: dict, flight_parameters: dict):
 
     altitude = flight_parameters['CRUISE_ALTITUDE']  # Cruise Height
     h_cru = altitude
-    V_cru = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
+    V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
@@ -479,9 +439,9 @@ aircraft_parameters_dict = {
 }
 
 
-# cruising_jet_range(aircraft_parameters, show = True)
-# cruising_jet_endurance(aircraft_parameters, show=True)
+# calc_cruising_jet_range(aircraft_parameters, show = True)
+# calc_cruising_jet_endurance(aircraft_parameters, show=True)
 # payload_x_range(aircraft_parameters=aircraft_parameters_dict, W=aircraft_parameters_dict['MTOW'], altitude=11582.4)
 
-# V_cru = get_cruise_velocity(aircraft_parameters=aircraft_parameters_dict, W=2.7e6, altitude=11582.4)
+# V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters_dict, W=2.7e6, altitude=11582.4)
 # print(V_cru)

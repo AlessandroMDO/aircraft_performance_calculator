@@ -55,13 +55,11 @@ def hash_dict(func):
         return func(*args, **kwargs)
     return wrapped
 
-
-@lru_cache()
-def get_logger():
+def get_logger(log_name=""):
     logging_config = dict(
         version=1,
         formatters={
-            'f': {'format': '%(asctime)s | %(name)-4s | %(levelname)-4s | %(message)s'}},
+            'f': {'format': f'%(asctime)s | %(name)-4s | %(levelname)-4s | {log_name} |%(message)s'}},
         handlers={
             'h': {'class': 'logging.StreamHandler',
                   'formatter': 'f',
