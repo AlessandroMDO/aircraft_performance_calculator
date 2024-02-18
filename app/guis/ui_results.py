@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 
@@ -13,8 +14,10 @@ from PySide2 import QtWidgets
 from functions.aero import Aero
 from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel
 from functions.takeoff import total_takeoff_distance, total_takeoff_time
+from functions.landing import total_landing_distance, total_landing_time
 from functions.gliding import gliding_range_endurance, gliding_angle_rate_of_descent
-from functions.cruising_jet import cruising_jet_range, cruising_jet_endurance, get_cruise_velocity
+from functions.cruising_jet import calc_cruising_jet_range, calc_cruising_jet_endurance, calc_cruise_velocity
+from functions.climb import calc_max_climb_angle_rate_of_climb
 
 class GUI_RESULTS(QMainWindow):
 
@@ -118,26 +121,37 @@ class GUI_RESULTS(QMainWindow):
         self.background.setIndent(0)
         self.background.setText("")
 
-        # --------------------------------------------------------------------------------------------------------------#
-        # --------------------------------------- TAKEOFF DISTANCE VALUE -----------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
+        #################################################################################################################
+        # -------------------------------------------------- TAKEOFF ---------------------------------------------------#
+        #################################################################################################################
 
         self.result_takeoff_distance = self.create_Qlabel(
             label_name="result_takeoff_distance",
-            label_geometry=QRect(288, 189, 89, 22))
+            label_geometry=QRect(231, 149, 89, 22))
         self.objects_list.append(self.result_takeoff_distance)
 
         self.result_takeoff_time = self.create_Qlabel(
             label_name="result_takeoff_time",
-            label_geometry=QRect(288, 214, 89, 22))
+            label_geometry=QRect(231, 174, 89, 22))
         self.objects_list.append(self.result_takeoff_time)
 
+        #################################################################################################################
+        # -------------------------------------------------- LANDING ---------------------------------------------------#
+        #################################################################################################################
 
+        self.result_landing_distance = self.create_Qlabel(
+            label_name="result_landing_distance",
+            label_geometry=QRect(232, 248, 89, 22))
+        self.objects_list.append(self.result_landing_distance)
 
+        self.result_landing_time = self.create_Qlabel(
+            label_name="result_landing_time",
+            label_geometry=QRect(232, 273, 89, 22))
+        self.objects_list.append(self.result_landing_time)
 
-
-        # ---------------------------------------------- GLIDING ------------------------------------------------------#
-        # -------------------------------------------------------------------------------------------------------------#
+        #################################################################################################################
+        # ------------------------------------------------ GLIDING -----------------------------------------------------#
+        #################################################################################################################
 
         # ------------------------------------------    CL CONSTANT    ------------------------------------------------#
         # -------------------------------------------------------------------------------------------------------------#
@@ -166,7 +180,7 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(179, 692, 75, 16))
         self.objects_list.append(self.result_gliding_cl_constant_max_endurance)
 
-        # Gráicos CL Constant
+        # Gráficos CL Constant
         self.display_cl_constant_graphs = QPushButton(self.centralwidget)
         self.display_cl_constant_graphs.setText("")  # Set an empty text to hide the label
         self.display_cl_constant_graphs.setGeometry(QRect(62, 584, 33, 31))
@@ -209,7 +223,7 @@ class GUI_RESULTS(QMainWindow):
         self.objects_list.append(self.display_v_constant_graphs)
 
 
-        # --------------------------------    RATE OF DESCENT AND GLIDING ANLE    -------------------------------------#
+        # --------------------------------    RATE OF DESCENT AND GLIDING ANGLE    ------------------------------------#
         # -------------------------------------------------------------------------------------------------------------#
         self.result_rate_of_descent = self.create_Qlabel(
             label_name="result_rate_of_descent",
@@ -226,20 +240,28 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(642, 584, 33, 31))
         self.objects_list.append(self.display_rate_of_descent_gliding_angle_graph)
 
+        #################################################################################################################
         # -------------------------------------------------- CRUISE ----------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
+        #################################################################################################################
 
         # Cruise Velocity
         self.result_cruise_velocity = self.create_Qlabel(
             label_name="result_cruise_velocity",
-            label_geometry=QRect(150, 384, 57, 22))
+            label_geometry=QRect(127, 405, 57, 22))
         self.objects_list.append(self.result_cruise_velocity)
 
         # Minimum Drag
         self.result_cruise_minimum_drag = self.create_Qlabel(
             label_name="result_cruise_minimum_drag",
-            label_geometry=QRect(150, 414, 57, 22))
+            label_geometry=QRect(25, 405, 57, 22))
         self.objects_list.append(self.result_cruise_minimum_drag)
+
+        self.display_minimun_drag_graph = QPushButton(self.centralwidget)
+        self.display_minimun_drag_graph.setText("")  # Set an empty text to hide the label
+        self.display_minimun_drag_graph.setGeometry(QRect(35, 434, 33, 31))
+        self.display_minimun_drag_graph.setStyleSheet("border: none; background: none;")  # Hide border and background
+        self.display_minimun_drag_graph.clicked.connect(self.invoke_minimum_drag_graph)
+        self.objects_list.append(self.display_minimun_drag_graph)
 
         ## Constant h-CL
 
@@ -310,8 +332,25 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(697, 444, 63, 22))
         self.objects_list.append(self.result_max_endurance_constant_h_v)
 
+        # --------------------------------------------------CLIMB -----------------------------------------------------#
 
 
+        self.result_max_climb_angle = self.create_Qlabel(
+            label_name="result_max_climb_angle",
+            label_geometry=QRect(641, 149, 89, 22))
+        self.objects_list.append(self.result_max_climb_angle)
+
+        self.result_max_rate_of_climb = self.create_Qlabel(
+            label_name="result_max_rate_of_climb",
+            label_geometry=QRect(641, 174, 89, 22))
+        self.objects_list.append(self.result_max_rate_of_climb)
+
+        self.display_rate_of_climb_graph = QPushButton(self.centralwidget)
+        self.display_rate_of_climb_graph.setText("")  # Set an empty text to hide the label
+        self.display_rate_of_climb_graph.setGeometry(QRect(750, 158, 33, 31))
+        self.display_rate_of_climb_graph.setStyleSheet("border: none; background: none;")  # Hide border and background
+        self.display_rate_of_climb_graph.clicked.connect(self.invoke_rate_of_climb_graph)
+        self.objects_list.append(self.display_rate_of_climb_graph)
 
 
 
@@ -323,7 +362,6 @@ class GUI_RESULTS(QMainWindow):
         Results.setCentralWidget(self.centralwidget)
 
         self.background.raise_()
-        # self.result_takeoff_distance.raise_()
         self.result_gliding_cl_constant_default_range.raise_()
         self.display_cl_constant_graphs.raise_()
         self.result_gliding_cl_constant_default_endurance.raise_()
@@ -346,16 +384,26 @@ class GUI_RESULTS(QMainWindow):
         Results.setWindowTitle(QCoreApplication.translate("Results", u"Results", None))
 
 
-    def calculate_takeoff_distance(self):
+    def calculate_takeoff_parameters(self):
 
         self.results_takeoff_distance = total_takeoff_distance(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
         self.results_takeoff_time = total_takeoff_time(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
 
         self.result_takeoff_distance_value = self.results_takeoff_distance['TAKEOFF_DISTANCE']
-        self.result_takeoff_distance.setText(str(round(self.result_takeoff_distance_value / 1000, 2)))
+        self.result_takeoff_distance.setText(str(round(self.result_takeoff_distance_value / 1000, 2)))  # [km]
 
         self.result_takeoff_time_value = self.results_takeoff_time['TAKEOFF_TIME']
-        self.result_takeoff_time.setText(str(round(self.result_takeoff_time_value / 1, 2)))
+        self.result_takeoff_time.setText(str(round(self.result_takeoff_time_value / 60, 2)))  # [min]
+
+    def calculate_landing_parameters(self):
+        self.results_landing_distance = total_landing_distance(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
+        self.results_landing_time = total_landing_time(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
+
+        self.result_landing_distance_value = self.results_landing_distance['LANDING_DISTANCE']
+        self.result_landing_distance.setText(str(round(self.result_landing_distance_value / 1000, 2)))  # [km]
+
+        self.result_landing_time_value = self.results_landing_time['LANDING_TIME']
+        self.result_landing_time.setText(str(round(self.result_landing_time_value / 60, 2)))  # [min]
 
 
 
@@ -367,18 +415,19 @@ class GUI_RESULTS(QMainWindow):
 
     def calculate_cruising_parameters(self):
 
-        self.results_cruise_velocity = get_cruise_velocity(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
+        self.results_cruise_velocity = calc_cruise_velocity(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters, plot=True)
 
         self.cruise_velocity_value = round(self.results_cruise_velocity['CRUISE_VELOCITY'], 2)
         self.result_cruise_velocity.setText(str(self.cruise_velocity_value))
 
         self.minimum_cruise_drag_value = self.results_cruise_velocity['MINIMUM_DRAG']
         self.result_cruise_minimum_drag.setText(str(round(self.minimum_cruise_drag_value / 1000, 2)))
+        self.result_cruise_minimum_drag_graph = self.results_cruise_velocity['CRUISE_DRAG_GRAPH']
 
         self.cruise_velocities = self.results_cruise_velocity['CRUISE_VELOCITIES']
 
         # Range
-        self.results_cruising_range = cruising_jet_range(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters)
+        self.results_cruising_range = calc_cruising_jet_range(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters)
 
         ## h_CL
         self.result_range_constant_h_cl_value = self.results_cruising_range['RANGE_CONSTANT_HEIGHT_CL']
@@ -403,7 +452,7 @@ class GUI_RESULTS(QMainWindow):
 
 
         # Endurance
-        self.results_cruising_endurance = cruising_jet_endurance(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters)
+        self.results_cruising_endurance = calc_cruising_jet_endurance(flight_parameters=self.flight_parameters, aircraft_parameters=self.aircraft_parameters)
 
         self.result_endurance_constant_h_cl_value = self.results_cruising_endurance['ENDURANCE_CONSTANT_HEIGHT_CL']
         self.result_max_endurance_constant_h_cl_value = self.results_cruising_endurance['MAX_ENDURANCE_CONSTANT_HEIGHT_CL']
@@ -425,7 +474,18 @@ class GUI_RESULTS(QMainWindow):
         self.result_max_endurance_constant_h_v.setText(str(round(self.result_max_endurance_constant_h_v_value / 3600, 2)))
 
 
+    def calculate_climb_parameters(self):
+        self.result_max_climb_angle_rate_of_climb = calc_max_climb_angle_rate_of_climb(flight_parameters=self.flight_parameters,
+                                                                                       aircraft_parameters=self.aircraft_parameters,
+                                                                                       plot=True)
 
+        self.result_max_climb_angle_value = self.result_max_climb_angle_rate_of_climb['MAX_GAMMA_CLIMB']
+        self.result_max_climb_angle.setText(str(round(math.degrees(self.result_max_climb_angle_value), 2)))
+
+        self.result_rate_of_climb_value = self.result_max_climb_angle_rate_of_climb['MAX_RATE_OF_CLIMB']
+        self.result_max_rate_of_climb.setText(str(round(self.result_rate_of_climb_value, 2)))
+
+        self.result_graph_rate_of_climb = self.result_max_climb_angle_rate_of_climb['GRAPH_RATE_OF_CLIMB_PER_VELOCITY']
 
 
     def calculate_gliding_parameters(self):
@@ -483,6 +543,14 @@ class GUI_RESULTS(QMainWindow):
     def invoke_gliding_cl_constant_graphs(self):
 
         self.gliding_cl_constant_graphs.show()
+    def invoke_rate_of_climb_graph(self):
+
+        self.result_graph_rate_of_climb.show()
+
+    def invoke_minimum_drag_graph(self):
+        self.result_cruise_minimum_drag_graph.show()
+
+
 
     def invoke_gliding_v_constant_graphs(self):
 
@@ -495,9 +563,14 @@ class GUI_RESULTS(QMainWindow):
     def calculate_all_results(self):
 
         # Takeoff
-        self.calculate_takeoff_distance()
+        self.calculate_takeoff_parameters()
+
+        #Climb
+
+        self.calculate_climb_parameters()
 
         # Landing
+        self.calculate_landing_parameters()
 
 
         # Cruise
