@@ -9,7 +9,7 @@ import sys
 sys.path.append('functions')
 from functions.aero import Aero
 from functions.utils import default_graph_colors, linspace
-from functions.cruising_jet import get_cruise_velocity
+from functions.cruising_jet import calc_cruise_velocity
 # from numpy import linspace
 import matplotlib.pyplot as plt
 
@@ -24,7 +24,7 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     Calcula o ângulo de planagem e a taxa de descida de uma aeronave em planagem em uma determinada altitude.
 
     Parâmetros:
-    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'CD0', 'S', 'K', e 'MTOW'.
+    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'CD0', 'S', 'K', e 'TOW'.
     - altitude: Altitude em metros.
     - plot: Um sinalizador booleano que indica se os resultados devem ser exibidos (opcional, padrão é False).
 
@@ -38,19 +38,19 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     - "GLIDING_RATE_OF_DESCENT_PLOT": Gráfico da taxa de descida em função da velocidade de planagem.
 
     Notas:
-    - A função assume que a função get_cruise_velocity() está definida e disponível no escopo.
+    - A função assume que a função calc_cruise_velocity() está definida e disponível no escopo.
     - O parâmetro 'K' pode ser calculado em função de outros parâmetros como 'e' e 'AR'.
-    - O peso 'W' considerado deve ser definido claramente (ex: MTOW).
+    - O peso 'W' considerado deve ser definido claramente (ex: TOW).
     """
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
     CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
-    MTOW = float(NP * c.person_weight + OEW + FW + CW)
+    TOW = float(NP * c.person_weight + OEW + FW + CW)
 
-    # MTOW - (50% do combustível)
-    W = MTOW - 0.5 * FW if W is None else W
+    # TOW - (50% do combustível)
+    W = TOW - 0.5 * FW if W is None else W
 
     CD0 = aircraft_parameters['CD0']
     S = aircraft_parameters['S']
@@ -58,7 +58,7 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
 
     V_gli = flight_parameters['GLIDING_VELOCITY']
 
-    V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
+    V = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
 
     altitude_cru = flight_parameters['CRUISE_ALTITUDE'] if altitude is None else altitude
     sigma = c.get_sigma(altitude=altitude_cru)
@@ -166,7 +166,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
     Calcula o alcance e a autonomia de uma aeronave em planagem entre duas altitudes.
 
     Parâmetros:
-    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'SURFACE_AREA', 'CL_MAX', 'CD0', 'K', e 'MTOW'.
+    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'SURFACE_AREA', 'CL_MAX', 'CD0', 'K', e 'TOW'.
     - altitude_final: Altitude inicial em metros.
     - altitude_inicial: Altitude final em metros.
 
@@ -181,9 +181,9 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
         - "GLIDING_ENDURANCE_CONSTANT_AIRSPEED": Autonomia em segundos.
 
     Notas:
-    - A função assume que as funções get_cruise_velocity() e calculate_general_drag_coefficient() estão definidas e disponíveis no escopo.
+    - A função assume que as funções calc_cruise_velocity() e calculate_general_drag_coefficient() estão definidas e disponíveis no escopo.
     - O parâmetro 'K' pode ser calculado em função de outros parâmetros como 'e' e 'AR'.
-    - O peso 'W' considerado deve ser definido claramente (ex: MTOW).
+    - O peso 'W' considerado deve ser definido claramente (ex: TOW).
     """
 
     S = aircraft_parameters['S']
@@ -196,10 +196,10 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
     CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
 
-    MTOW = float(NP * c.person_weight + OEW + FW + CW)
+    TOW = float(NP * c.person_weight + OEW + FW + CW)
 
-    # MTOW - (50% do combustível)
-    W = MTOW - 0.5 * FW if W is None else W
+    # TOW - (50% do combustível)
+    W = TOW - 0.5 * FW if W is None else W
 
     beta = 9296
 
@@ -323,7 +323,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
 
         V_gli = flight_parameters['GLIDING_VELOCITY']
 
-        V = get_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
+        V = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
 
         def get_A_B(V_i):
 
@@ -331,11 +331,13 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             B = (2 * K * (W / S)) / (rho_ssl * V_i ** 2)
             return A, B
 
+
         def get_x_v(A_i, B_i):
 
             part_1_range = math.atan((A_i / B_i) * math.e ** (-altitude_final / beta))
             part_2_range = math.atan((A_i / B_i) * math.e ** (-altitude_inicial / beta))
 
+            # 7.19 - OJHA
             x_v = ((beta / B_i) * (part_1_range - part_2_range))
 
             return x_v
