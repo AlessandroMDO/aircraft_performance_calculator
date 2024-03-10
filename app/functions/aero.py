@@ -21,7 +21,7 @@ class Aero:
         self.medium_breaking_constant = 0.35 * 9.81
         self.minimum_breaking_constant = 0.15 * 9.81
         self.gamma_Ap = math.radians(3)
-        self.person_weight = 75  # [kg]
+        self.person_weight = 75 * 9.81  # [kg]
         self.logger = get_logger()
 
     def calculate_general_drag_coefficient(self, K, CD0, S=None, altitude=None, V=None, W=None, CL=None):
@@ -64,7 +64,7 @@ class Aero:
         return t1, p1
 
     #https://gist.github.com/buzzerrookie/5b6438c603eabf13d07e
-    def get_density(self, altitude, temp=None):
+    def get_density(self, altitude, get_temp=None):
         a = [-0.0065, 0, 0.001, 0.0028]
         h = [11000, 20000, 32000, 47000]
         p0 = 101325
@@ -82,7 +82,11 @@ class Aero:
                 prevh = h[i]
 
         density = pressure / (self.R_gas * temperature)
-        return density
+
+        if get_temp is None:
+            return density
+        else:
+            return density, temperature
 
 
     def get_sigma(self, altitude: float) -> float:
