@@ -1,16 +1,9 @@
-import os
-import sys
-
-# current_dir = os.path.dirname(os.path.realpath(__file__))
-# parent_dir = os.path.dirname(current_dir)
-# sys.path.append(parent_dir)
-
 import sys
 sys.path.append('functions')
 from functions.aero import Aero
-from functions.utils import default_graph_colors, linspace
+from functions.utils import default_graph_colors
 from functions.cruising_jet import calc_cruise_velocity
-# from numpy import linspace
+from numpy import linspace, arange
 import matplotlib.pyplot as plt
 
 import math
@@ -64,7 +57,7 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     sigma = c.get_sigma(altitude=altitude_cru)
     rho_ssl = c.rho_0
 
-    def get_gliding_angle_rate_of_descent(V_i):
+    def get_gliding_angle_rate_of_descent(V_i, sigma):
 
         part_1 = (rho_ssl * sigma * V_i ** 2 * CD0) / (2 * W / S)
         part_2 = (2 * K * (W / S)) / (rho_ssl * sigma * V_i ** 2)
@@ -73,35 +66,48 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
 
         return gliding_angle, rate_of_descent
 
-    gliding_angle_cru, rate_of_descent_cru = get_gliding_angle_rate_of_descent(V_i=V)
+    gliding_angle_cru, rate_of_descent_cru = get_gliding_angle_rate_of_descent(V_i=V, sigma=sigma)
 
     if plot is True:
 
-        velocity_range = linspace(0.7 * V, 1.3 * V, 25)
-        gliding_angle_list, rate_of_descent_list = [], []
-        for V_i in velocity_range:
-            gliding_angle_i, rate_of_descent_i = get_gliding_angle_rate_of_descent(V_i=V_i)
-            gliding_angle_list.append(gliding_angle_i)
-            rate_of_descent_list.append(rate_of_descent_i)
+        velocity_range = linspace(0.5 * V, 3 * V, 25)
+        altitude_values = linspace(0.2 * altitude_cru, altitude_cru, 5)
 
-        fig_rate_of_descent_gliding_angle, ax_rate_of_descent_gliding_angle = plt.subplots(figsize=(6, 5))
+        fig_rate_of_descent_gliding_angle, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
 
-        fig1 = ax_rate_of_descent_gliding_angle.plot(velocity_range, [round(math.degrees(angle), 2) for angle in gliding_angle_list], c=colors['blue'], label="Gliding Angle", ls='--')
-        ax_rate_of_descent_gliding_angle.set_xlabel("Velocity [m/s]", fontsize=14)
-        ax_rate_of_descent_gliding_angle.set_ylabel('Gliding Angle [º]', color="black", fontsize=14)
+        for altitude_i in altitude_values:
+            sigma_i = c.get_sigma(altitude=altitude_i)
+            gliding_angle_list = []
+            rate_of_descent_list = []
 
-        fig2 = ax_rate_of_descent_gliding_angle.axvline(V, c=colors['dark_green'], label="Gliding Velocity", ls="-.")
+            for V_i in velocity_range:
+                gliding_angle_i, rate_of_descent_i = get_gliding_angle_rate_of_descent(V_i=V_i, sigma=sigma_i)
+                gliding_angle_list.append(math.degrees(gliding_angle_i))
+                rate_of_descent_list.append(-1 * rate_of_descent_i)
 
-        ax2 = ax_rate_of_descent_gliding_angle.twinx()
-        fig3 = ax2.plot(velocity_range, [round(rate, 2) for rate in rate_of_descent_list], c='black', label="Rate of Descent")
+            ax1.plot(velocity_range, gliding_angle_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+            ax2.plot(velocity_range, rate_of_descent_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+
+        ax1.set_xlabel("Velocity [m/s]", fontsize=14)
+        ax1.set_ylabel('Gliding Angle [º]', color="black", fontsize=14)
+
+        ax2.set_xlabel("Velocity [m/s]", fontsize=14)
         ax2.set_ylabel('Rate of Descent [m/s]', color="black", fontsize=14)
 
-        lines, labels = ax_rate_of_descent_gliding_angle.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines + lines2, labels + labels2, loc=0)
+        ax1.axvline(V, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+        ax1.legend(loc=0)
 
-        plt.title(f"Gliding angle & Rate of Descent", fontsize=12)
-        ax_rate_of_descent_gliding_angle.grid()
+        ax2.axvline(V, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+        ax2.legend(loc=0)
+
+        ax1.set_title("Gliding angle")
+        ax1.grid()
+
+        ax2.grid()
+        ax2.set_title("Rate of Descent")
+
+        ax1.yaxis.set_ticks(arange(ax1.get_ylim()[0], ax1.get_ylim()[1], 2))
+        ax2.yaxis.set_ticks(arange(ax2.get_ylim()[0], ax2.get_ylim()[1], 20))
 
         if display is True:
             plt.show()
@@ -115,50 +121,6 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     }
 
     return result
-
-
-
-    # if plot is False:
-    #     result = {
-    #         "GLIDING_ANGLE": round(math.degrees(gliding_angle_cru), 2),
-    #         "GLIDING_RATE_OF_DESCENT": round(rate_of_descent_cru, 2)}
-    #     return result
-    # else:
-    #     velocity_range = linspace(0.7 * V, 1.3 * V, 25)
-    #     gliding_angle_list = []
-    #     for v_i in velocity_range:
-    #         gliding_i = -1 * (((rho_ssl * sigma * v_i ** 2 * CD0) / (2 * W / S)) + (2 * K * (W / S)) / (rho_ssl * sigma * v_i ** 2))
-    #         gliding_angle_list.append(gliding_i)
-    #
-    #     rate_descent_list = [-1 * v * gamma for v, gamma in zip(velocity_range, gliding_angle_list)]
-    #
-    #     fig_rate_of_descent = plt.figure(figsize=(5, 3))
-    #     plt.plot(velocity_range, rate_descent_list, c='black', label = "Rate of descent")
-    #     plt.axvline(x=V, ymin=0, ymax=1, color='r', label="Cruise Velocity")
-    #     plt.xlabel("Velocity [m/s]", size=12)
-    #     plt.ylabel("Rate [m/s]", size=12)
-    #     plt.title("Rate of descent per gliding velocity")
-    #     plt.grid()
-    #     plt.legend()
-    #     plt.show()
-    #
-    #     fig_gliding_angle = plt.figure(figsize=(5, 3))
-    #     plt.plot(velocity_range, gliding_angle_list, c='black', label = "Gliding angle")
-    #     plt.axvline(x=V, ymin=0, ymax=1, color='r', label = "Cruise Velocity")
-    #     plt.xlabel("Velocity [m/s]", size=12)
-    #     plt.ylabel("Gliding Angle [rad]", size=12)
-    #     plt.title("Gliding angle per gliding velocity")
-    #     plt.grid()
-    #     plt.legend()
-    #     plt.show()
-    #
-    #     return {
-    #         "GLIDING_ANGLE": gliding_angle_cru,
-    #         "GLIDING_ANGLE_PLOT": fig_gliding_angle,
-    #         "GLIDING_RATE_OF_DESCENT": rate_of_descent_cru,
-    #         "GLIDING_RATE_OF_DESCENT_PLOT": fig_rate_of_descent
-    #     }
-
 
 def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gli=None, graph_V=False, graph_CL=False, display=False):
 
