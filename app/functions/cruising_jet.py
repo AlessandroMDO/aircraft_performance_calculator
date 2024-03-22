@@ -196,6 +196,8 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     E_cru = CL_cru / CD_cru
     logger.debug(f"E_cru: {E_cru}")
 
+    E_m = 1 / (2 * math.sqrt(K * CD0))
+
     # -----------------------------------------------------------------------------------------------------------------#
     # CASE 1 - Range and Flight Parameters of Constant Altitude-Constant Lift Coefficient Flight
 
@@ -207,6 +209,7 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     x_mr_h_CL = math.sqrt(3 * math.sqrt(3) * 0.5) * math.sqrt((2 * W_1/ S)/(aero.rho_0 * sigma)) * (math.sqrt(E_m_h_CL / CD0)/c) * (1 - math.sqrt(1 - zeta))
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 2 - Range and Flight Parameters of Constant Airspeed-Constant Lift Coefficient Flight
+    # OJHA - 8.23
     x_V_CL = ((E_cru * V_cru) / c) * math.log(1 / (1 - zeta))
 
     t_loiter = 1.16 * (x_V_CL / V_cru)  # Approximate Method of Deriving Loiter Time from Range (Eq 9)
@@ -221,7 +224,8 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
-    x_h_V = ((2 * V_cru * E_cru) / c) * math.atan(E_cru * zeta / (2 * E_cru * (1 - K * E_cru * CL_cru * zeta)))
+    # OJHA - 8.35
+    x_h_V = ((2 * V_cru * E_m) / c) * math.atan(E_cru * zeta / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
 
     E_mr_h_V = math.sqrt(3) * E_m_V_CL / 2  # Equação 9.23
     zeta_rix = zeta
@@ -295,6 +299,8 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
     CD_cru = CD0 + K * CL_cru ** 2
     E_cru = CL_cru / CD_cru
 
+    E_m = 1 / (2 * math.sqrt(K * CD0))
+
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 1 - Range and Flight Parameters of Constant Altitude-Constant Lift Coefficient Flight
     t_h_CL = (E_cru / c) * math.log(1 / (1 - zeta))
@@ -311,7 +317,7 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
-    t_h_V = (2 * E_cru / c) * math.atan((E_cru * zeta) / (2 * E_cru * (1 - K * E_cru * CL_cru * zeta)))
+    t_h_V = (2 * E_m / c) * math.atan((E_cru * zeta) / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
 
     zeta_rix = zeta
     E_t_m_h_V = 1 / (2 * math.sqrt(K * CD0))
@@ -434,9 +440,15 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     plt.scatter(xy_C[0], xy_C[1], c="#1D3D7B")
     plt.scatter(xy_D[0], xy_D[1], c="#1D3D7B")
 
+    plt.annotate(text = "A", xy = (xy_A[0], xy_A[1]))
+    plt.annotate(text = "B", xy = (xy_B[0], xy_B[1]))
+    plt.annotate(text = "C", xy = (xy_C[0], xy_C[1]))
+    plt.annotate(text = "D", xy = (xy_D[0], xy_D[1]))
+
     plt.ylabel("Payload [kN]", fontsize=12)
     plt.title("Diagram Payload vs. Range", fontsize=14)
     plt.xlabel("x [km]", fontsize=12)
+    plt.legend()
     plt.grid(True)
 
     if display is True:
