@@ -8,6 +8,9 @@ from PySide2 import QtWidgets
 from functions.aero import Aero
 from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QTextEdit
 from db.utils.db_utils import *
+import math
+
+#TODO: carregar uma foto da aeronave ou mostrar uma foto genérica
 
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
@@ -357,6 +360,25 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['area']))
 
         # --------------------------------------------------------------------------------------------------------------#
+        # ---------------------------------------- FUEL CAPACITY TEXT BOX ----------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.fuel_weight = QTextEdit(self.centralwidget)
+        self.fuel_weight.setObjectName(u"fuel_weight")
+        self.fuel_weight.setGeometry(QRect(251, 650, 112, 25.06))
+        self.fuel_weight.setFont(font)
+        self.fuel_weight.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.fuel_weight.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fuel_weight.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fuel_weight.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.fuel_weight.setLineWrapColumnOrWidth(500000)
+        self.fuel_weight.setTabStopWidth(80)
+        self.fuel_weight.setAcceptRichText(True)
+        self.fuel_weight.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Type the fuel capacity of the aircrafy.", None))
+        self.fuel_weight.textChanged.connect(self.handle_fuel_capacity_value)
+        self.fuel_weight.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['fuel_weight']))
+
+        # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
         self.create_db_button = QPushButton(self.centralwidget)
@@ -396,6 +418,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.create_db_button.raise_()
         self.delete_aircraft_db_button.raise_()
         self.update_db_button.raise_()
+        self.fuel_weight.raise_()
 
         self.statusbar = QStatusBar(Aircraft_Parameters)
         self.statusbar.setObjectName(u"statusbar")
@@ -502,6 +525,26 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.logger.debug(f"oew value: {self.oew_value}")
 
+    def handle_fuel_capacity_value(self):
+
+        text_fuel_weight = self.fuel_weight.toPlainText()
+
+        if not text_fuel_weight:
+            self.fuel_weight.setPlainText("0")
+        else:
+            try:
+                fuel_weight = float(text_fuel_weight)
+                if 0 <= fuel_weight < 1000000:
+                    self.fuel_weight_value = fuel_weight
+                else:
+                    self.fuel_weight.clear()
+            except ValueError:
+                self.fuel_weight.clear()
+
+        self.logger.debug(f"fuel_weight value: {self.fuel_weight_value}")
+
+
+
     def handle_mtow_value(self):
 
         text_mtow = self.mtow.toPlainText()
@@ -547,7 +590,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 tsfc = float(text_tsfc)
-                if 0 <= tsfc < 10:
+                if 0 <= tsfc < 10000:
                     self.tsfc_value = tsfc
                 else:
                     self.tsfc.clear()
@@ -620,6 +663,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.e.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['e']))
         self.oew.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['oew'] / 1000, 3)))
         self.mtow.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['mtow'] / 1000, 3)))
+        self.fuel_weight.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['fuel_weight'] / 1000, 3)))
         self.b.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['b']))
         self.tsfc.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['tsfc']))
         self.t0.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['t0'] / 1000, 3)))
@@ -630,10 +674,14 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
     def get_aircraft_parameters(self, convert_units=False):
 
+        K = 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value))
+        CD0 = self.cd0_value
+
         result = {
             'AIRCRAFT_NAME': self.text_aircraft_name,
             'OEW': self.oew_value * 1000 if convert_units is False else self.oew_value * 1000 * self.aero.g,
             'MTOW': self.mtow_value * 1000 if convert_units is False else self.mtow_value * 1000 * self.aero.g,
+            'FUEL_WEIGHT': self.fuel_weight_value * 1000 if convert_units is False else self.oew_value * 1000 * self.aero.g,
             'b': self.b_value,
             'e': self.e_value,
             'AR': (self.b_value ** 2) / self.wing_area_value,
@@ -642,13 +690,15 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             'NE': self.ne_value,
             'CL_MAX': self.cl_max_value,
             'S': self.wing_area_value,
-            'K': 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value)),
-            'CD0': self.cd0_value
+            'K': K,
+            'CD0': CD0,
+            'E_m': 1 / (2 * math.sqrt(K * CD0)),
         }
 
         self.logger.debug(f"Current aircraft parameters: {result}")
 
         return result
+
 
     def warning_box(self, message, ok_and_decline=False):
 
@@ -668,7 +718,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             result = msg_box.exec_()
 
             return result
-
 
 
     def success_box(self, message):
@@ -700,8 +749,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
                     count_aircrafts += 1
 
 
-
-
     def save_current_aicraft_to_db(self):
 
         result = self.get_aircraft_parameters()
@@ -718,9 +765,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
             insert_query = f""" 
             INSERT INTO airplanes 
-            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow) 
+            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow, fuel_weight) 
             VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}) ;
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}, {result['FUEL_WEIGHT']}) ;
             """
 
             insert_data_to_db(db_path=r"./db/aero.db", query=insert_query)
@@ -752,9 +799,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
             insert_query = f""" 
             INSERT INTO airplanes 
-            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow) 
+            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow, fuel_weight) 
             VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}) ;
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}, {result['FUEL_WEIGHT']}) ;
             """
 
             insert_data_to_db(db_path=r"./db/aero.db", query=insert_query)

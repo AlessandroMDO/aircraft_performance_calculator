@@ -110,9 +110,6 @@ class InputTableWindow(QMainWindow):
         self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
 
-
-
-
 if __name__ == "__main__":
     app = QApplication([])
     window = InputTableWindow()

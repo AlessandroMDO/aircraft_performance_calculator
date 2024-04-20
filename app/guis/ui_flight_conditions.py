@@ -24,12 +24,12 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         super(GUI_FLIGHT_CONDITIONS, self).__init__()
 
-        self.gliding_velocity_value = 20
-        self.cruise_velocity_value = 100
+        self.gliding_velocity_value = 100
+        self.cruise_velocity_value = 200
         self.display_altitude_landing = None
         self.result_gliding_range_endurance = {}
         self.cw_value = 10 / 1000
-        self.np_value = 2
+        self.np_value = 10
         self.airport_takeoff_parameters = None
 
         self.airport_landing_parameters = None
@@ -37,9 +37,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.runway_slope_landing_value = 0
         self.wind_velocity_landing_value = 0
         self.cruise_altitude_value = 11000
-        self.fw_value = 110 / 1000
-        self.oew_value = 300 / 1000
-        self.ne_value = 1
+        self.fw_value = 5000 / 1000
         self.aero = Aero()
         self.display_altitude_landing_value = None
 
@@ -367,36 +365,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.display_airport_name_takeoff.setAlignment(Qt.AlignCenter)
         self.display_airport_name_takeoff.setFont(font)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         # ------------------------------------------------------------------------------------------------------------ #
         # -------------------------------------------- LANDING ------------------------------------------------------- #
         # ------------------------------------------------------------------------------------------------------------ #
@@ -430,22 +398,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
 
         self.current_landing_airport_iata = current_landing_airport.split(" -")[0]
         self.logger.debug(f"current_landing_airport_iata: {self.current_landing_airport_iata}")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------- WIND VELOCITY LANDING TEXT BOX ---------------------------------------#
@@ -607,74 +559,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         self.gliding_velocity.setText(str(self.gliding_velocity_value))
         self.gliding_velocity.textChanged.connect(self.handle_gliding_velocity_value)
 
-
         # -------------------------------------------------------------------------------------------------------------#
-
-        # -------------------------------------------------------------------------------------------------------------#
-        # ----------------------------------------- RUN ANALYSIS ------------------------------------------------------#
-        # -------------------------------------------------------------------------------------------------------------#
-
-        # self.run_analysis_button = QPushButton(self.centralwidget)
-        # self.run_analysis_button.setText("")  # Set an empty text to hide the label
-        # self.run_analysis_button.setGeometry(QRect(316, 721, 168, 44))
-        # self.run_analysis_button.setStyleSheet("border: none; background: none;")
-        # self.run_analysis_button.clicked.connect(self.invoke_analysis)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         Flight_Conditions.setCentralWidget(self.centralwidget)
 
         self.background.raise_()
@@ -708,10 +593,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         for obj in self.objects_list:
             obj.raise_()
 
-
-
-
-
         self.statusbar = QStatusBar(Flight_Conditions)
         self.statusbar.setObjectName(u"statusbar")
 
@@ -720,8 +601,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
         QMetaObject.connectSlotsByName(Flight_Conditions)
 
         Flight_Conditions.setWindowTitle(QCoreApplication.translate("Flight_Conditions", u"Flight_Conditions", None))
-
-
 
     def handle_np_value(self):
 
@@ -1044,6 +923,7 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
             self.airport_takeoff_parameters['AIRPORT_NAME'] = airport_takeoff_results[0][5]
 
     def calculate_landing_airport_parameters(self):
+
         airport_landing_results, _ = execute_generic_query(
             db_path=r"db/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_landing_airport_iata}' as airport_code, aeroporto from airports where iata='{self.current_landing_airport_iata}';",
@@ -1060,16 +940,6 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
     def update_parameters(self, new_aircraft_parameters):
         self.aircraft_parameters = new_aircraft_parameters
 
-
-
-
-
-
-
-
-
-
-
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
     def get_flight_parameters(self):
 
@@ -1079,6 +949,8 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
                 "WIND_VELOCITY_TAKEOFF": self.wind_velocity_takeoff_value,
                 "RUNWAY_SLOPE_TAKEOFF": self.runway_slope_takeoff_value,
                 "ALTITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'],
+                "LATITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LATITUDE'],
+                "LONGITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE'],
                 "AIRPORT_TAKEOFF_RUNWAY_DISTANCE": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_RUNWAY_DISTANCE'],
                 "MU_TAKEOFF": self.runway_condition_takeoff_mu
             },
@@ -1087,6 +959,8 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
                 "WIND_VELOCITY_LANDING": self.wind_velocity_landing_value,
                 "RUNWAY_SLOPE_LANDING": self.runway_slope_landing_value,
                 "ALTITUDE_LANDING": self.airport_landing_parameters['AIRPORT_LANDING_ELEVATION'],
+                "LATITUDE_LANDING": self.airport_landing_parameters['AIRPORT_LANDING_LATITUDE'],
+                "LONGITUDE_LANDING": self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE'],
                 "AIRPORT_LANDING_RUNWAY_DISTANCE": self.airport_landing_parameters['AIRPORT_LANDING_RUNWAY_DISTANCE'],
                 "MU_LANDING": self.runway_condition_landing_mu
             },
