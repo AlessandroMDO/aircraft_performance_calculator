@@ -1,10 +1,12 @@
 import math
 from .aero import Aero
 from functions.cruising_jet import calc_cruise_velocity
+from functions.utils import default_graph_colors
 from numpy import linspace
 import matplotlib.pyplot as plt
 
 aero = Aero()
+colors = default_graph_colors()
 
 
 def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
@@ -28,7 +30,7 @@ def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict
     # TOW - (50% do combustível)
     W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     sigma = aero.get_sigma(altitude=altitude)
     rho_SSL = aero.rho_0
@@ -101,36 +103,36 @@ def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict
         radius_list.append(radius_i)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-    plt.subplots_adjust(wspace=0.3)  # Adjust the horizontal space between subplots
+    plt.subplots_adjust(wspace=0.3)
 
-    # Plot data on the left subplot
-    line1, = ax1.plot(V_linspace, n_list, label="Load Factor", color="blue")
+    line1, = ax1.plot(V_linspace, n_list, label="Load Factor", color=colors['blue'])
     ax1.set_ylabel("Load Factor (n)")
     line3 = ax1.axvline(VELOCITY_FASTEST_TURN, label = f"Fastest Turn Velocity = {round(VELOCITY_FASTEST_TURN, 2)}", color = 'black')
     line4 = ax1.axvline(VELOCITY_TIGHEST_TURN, label = f"Tighest Turn Velocity = {round(VELOCITY_TIGHEST_TURN, 2)}", color = 'black', ls = "--")
     line5 = ax1.axvline(VELOCITY_STALL, label = f"Stall Velocity = {round(VELOCITY_STALL, 2)}", color = 'black', ls = "-.")
     ax1.set_xlabel("Velocity (m/s)")
+    ax1.set_title("Load Factor per Velocity")
     ax1.tick_params(axis='y')
     ax1.grid()
 
-    # Create a twin y-axis for Turning Rate (n)
     ax1_right = ax1.twinx()
-    line2, = ax1_right.plot(V_linspace, omega_list, label="Turning Rate", color="red")
+    line2, = ax1_right.plot(V_linspace, omega_list, label="Turning Rate", color=colors["green"])
     ax1_right.set_ylabel("Turning Rate (rad/s)")
     ax1_right.tick_params(axis='y')
-    # ax1_right.legend()
+
 
     lines = [line1, line2, line3, line4, line5]
     labels = [line.get_label() for line in lines]
     ax1.legend(lines, labels)
 
     # Plot data on the right subplot
-    ax2.plot(V_linspace, [r/1000 for r in radius_list])
+    ax2.plot(V_linspace, [r/1000 for r in radius_list], color = colors['blue'])
     ax2.axvline(VELOCITY_FASTEST_TURN, label = f"Fastest Turn Velocity = {round(VELOCITY_FASTEST_TURN, 2)}", color = 'black')
     ax2.axvline(VELOCITY_TIGHEST_TURN, label = f"Tighest Turn Velocity = {round(VELOCITY_TIGHEST_TURN, 2)}", color = 'black', ls = "--")
     ax2.axvline(VELOCITY_STALL, label = f"Stall Velocity = {round(VELOCITY_STALL, 2)}", color = 'black', ls = "-.")
     ax2.set_ylabel("Turning Radius (km)")
     ax2.set_xlabel("Velocity (m/s)")
+    ax2.set_title("Turning Radius per Velocity")
     ax2.grid()
     ax2.legend()
 
@@ -140,9 +142,6 @@ def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict
         pass
 
     return fig
-
-
-
 
 
 def calc_fastest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
@@ -168,7 +167,7 @@ def calc_fastest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUI
     # TOW - (50% do combustível)
     W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     # OJHA - 11.28
     Vft = math.sqrt(2 * (W/S)/(rho_SSL*sigma)) * (K/CD0)**0.25
@@ -218,7 +217,7 @@ def calc_tighest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUI
     # TOW - (50% do combustível)
     W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     # OJHA - 11.36
     vtt = (
@@ -243,6 +242,7 @@ def calc_tighest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUI
         "TURNING_RATE_TIGHEST_TURN": xtt
     }
 
+
 def calc_stall_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
 
     S = aircraft_parameters['S']
@@ -265,9 +265,10 @@ def calc_stall_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
     # TOW - (50% do combustível)
+
     W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     E_CL_m = CL_max / (CD0 + K * CL_max ** 2)
 

@@ -2,7 +2,6 @@ import sys
 sys.path.append('functions')
 from functions.aero import Aero
 from functions.utils import default_graph_colors
-from functions.cruising_jet import calc_cruise_velocity
 from numpy import linspace, arange
 import matplotlib.pyplot as plt
 
@@ -13,28 +12,6 @@ c = Aero()
 colors = default_graph_colors()
 
 def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitude=None, W=None, V_gli=None, plot=False, display=False):
-    """
-    Calcula o ângulo de planagem e a taxa de descida de uma aeronave em planagem em uma determinada altitude.
-
-    Parâmetros:
-    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'CD0', 'S', 'K', e 'TOW'.
-    - altitude: Altitude em metros.
-    - plot: Um sinalizador booleano que indica se os resultados devem ser exibidos (opcional, padrão é False).
-
-    Retorna:
-    Um dicionário contendo dois resultados:
-    - "GLIDING_ANGLE": Ângulo de planagem em radianos.
-    - "GLIDING_RATE_OF_DESCENT": Taxa de descida em metros por segundo.
-
-    Se plot for True, também retorna dois gráficos:
-    - "GLIDING_ANGLE_PLOT": Gráfico do ângulo de planagem em função da velocidade de planagem.
-    - "GLIDING_RATE_OF_DESCENT_PLOT": Gráfico da taxa de descida em função da velocidade de planagem.
-
-    Notas:
-    - A função assume que a função calc_cruise_velocity() está definida e disponível no escopo.
-    - O parâmetro 'K' pode ser calculado em função de outros parâmetros como 'e' e 'AR'.
-    - O peso 'W' considerado deve ser definido claramente (ex: TOW).
-    """
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
@@ -51,8 +28,6 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
 
     V_gli = flight_parameters['GLIDING_VELOCITY']
 
-    V = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
-
     altitude_cru = flight_parameters['CRUISE_ALTITUDE'] if altitude is None else altitude
     sigma = c.get_sigma(altitude=altitude_cru)
     rho_ssl = c.rho_0
@@ -66,16 +41,64 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
 
         return gliding_angle, rate_of_descent
 
-    gliding_angle_cru, rate_of_descent_cru = get_gliding_angle_rate_of_descent(V_i=V, sigma=sigma)
+    gliding_angle_cru, rate_of_descent_cru = get_gliding_angle_rate_of_descent(V_i=V_gli, sigma=sigma)
+
+    # if plot is True:
+    #
+    #     velocity_range = linspace(0.5 * V_gli, 3 * V_gli, 25)
+    #     altitude_values = linspace(0.2 * altitude_cru, altitude_cru, 5)
+    #
+    #     fig_rate_of_descent_gliding_angle, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    #
+    #     for altitude_i in altitude_values:
+    #         sigma_i = c.get_sigma(altitude=altitude_i)
+    #         gliding_angle_list = []
+    #         rate_of_descent_list = []
+    #
+    #         for V_i in velocity_range:
+    #             gliding_angle_i, rate_of_descent_i = get_gliding_angle_rate_of_descent(V_i=V_i, sigma=sigma_i)
+    #             gliding_angle_list.append(math.degrees(gliding_angle_i))
+    #             rate_of_descent_list.append(-1 * rate_of_descent_i)
+    #
+    #         ax1.plot(velocity_range, gliding_angle_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+    #         ax2.plot(velocity_range, rate_of_descent_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+    #
+    #     ax1.set_xlabel("Velocity [m/s]", fontsize=14)
+    #     ax1.set_ylabel('Gliding Angle [º]', color="black", fontsize=14)
+    #
+    #     ax2.set_xlabel("Velocity [m/s]", fontsize=14)
+    #     ax2.set_ylabel('Rate of Descent [m/s]', color="black", fontsize=14)
+    #
+    #     ax1.axvline(V_gli, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+    #     ax1.legend(loc=0)
+    #
+    #     ax2.axvline(V_gli, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+    #     ax2.legend(loc=0)
+    #
+    #     ax1.set_title("Gliding angle")
+    #     ax1.grid()
+    #
+    #     ax2.grid()
+    #     ax2.set_title("Rate of Descent")
+    #
+    #     ax1.yaxis.set_ticks(arange(ax1.get_ylim()[0], ax1.get_ylim()[1], 2))
+    #     ax2.yaxis.set_ticks(arange(ax2.get_ylim()[0], ax2.get_ylim()[1], 20))
+    #
+    #     if display is True:
+    #         plt.show()
+    #     else:
+    #         pass
 
     if plot is True:
 
-        velocity_range = linspace(0.5 * V, 3 * V, 25)
+        velocity_range = linspace(0.5 * V_gli, 3 * V_gli, 25)
         altitude_values = linspace(0.2 * altitude_cru, altitude_cru, 5)
 
-        fig_rate_of_descent_gliding_angle, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+        fig_rate_of_descent, ax_rate_of_descent = plt.subplots(figsize=(6, 5))
+        fig_gliding_angle, ax_gliding_angle = plt.subplots(figsize=(6, 5))
 
         for altitude_i in altitude_values:
+
             sigma_i = c.get_sigma(altitude=altitude_i)
             gliding_angle_list = []
             rate_of_descent_list = []
@@ -85,30 +108,30 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
                 gliding_angle_list.append(math.degrees(gliding_angle_i))
                 rate_of_descent_list.append(-1 * rate_of_descent_i)
 
-            ax1.plot(velocity_range, gliding_angle_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
-            ax2.plot(velocity_range, rate_of_descent_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+            ax_gliding_angle.plot(velocity_range, gliding_angle_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
+            ax_rate_of_descent.plot(velocity_range, rate_of_descent_list, label=f"Altitude: {altitude_i / 1000:.2f} km")
 
-        ax1.set_xlabel("Velocity [m/s]", fontsize=14)
-        ax1.set_ylabel('Gliding Angle [º]', color="black", fontsize=14)
+        ax_gliding_angle.set_xlabel("Velocity [m/s]", fontsize=14)
+        ax_gliding_angle.set_ylabel('Gliding Angle [º]', color="black", fontsize=14)
 
-        ax2.set_xlabel("Velocity [m/s]", fontsize=14)
-        ax2.set_ylabel('Rate of Descent [m/s]', color="black", fontsize=14)
+        ax_rate_of_descent.set_xlabel("Velocity [m/s]", fontsize=14)
+        ax_rate_of_descent.set_ylabel('Rate of Descent [m/s]', color="black", fontsize=14)
 
-        ax1.axvline(V, c=colors['dark_green'], label="Descending Velocity", ls="-.")
-        ax1.legend(loc=0)
+        ax_rate_of_descent.axvline(V_gli, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+        ax_rate_of_descent.legend(loc=0)
 
-        ax2.axvline(V, c=colors['dark_green'], label="Descending Velocity", ls="-.")
-        ax2.legend(loc=0)
+        ax_gliding_angle.axvline(V_gli, c=colors['dark_green'], label="Descending Velocity", ls="-.")
+        ax_gliding_angle.legend(loc=0)
 
-        ax1.set_title("Gliding angle")
-        ax1.grid()
+        ax_gliding_angle.set_title("Gliding angle")
+        ax_gliding_angle.grid()
 
-        ax2.grid()
-        ax2.set_title("Rate of Descent")
+        ax_rate_of_descent.grid()
+        ax_rate_of_descent.set_title("Rate of Descent")
 
-        ax1.yaxis.set_ticks(arange(ax1.get_ylim()[0], ax1.get_ylim()[1], 2))
-        ax2.yaxis.set_ticks(arange(ax2.get_ylim()[0], ax2.get_ylim()[1], 20))
-
+        ax_rate_of_descent.yaxis.set_ticks(arange(ax_rate_of_descent.get_ylim()[0], ax_rate_of_descent.get_ylim()[1], 4))
+        ax_gliding_angle.yaxis.set_ticks(arange(ax_gliding_angle.get_ylim()[0], ax_gliding_angle.get_ylim()[1], 5))
+        plt.tight_layout()
         if display is True:
             plt.show()
         else:
@@ -117,36 +140,13 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
     result = {
         "GLIDING_ANGLE": round(math.degrees(gliding_angle_cru), 2),
         "GLIDING_RATE_OF_DESCENT": round(rate_of_descent_cru, 2),
-        "GLIDING_ANGLE_RATE_OF_DESCENT_GRAPH": fig_rate_of_descent_gliding_angle if plot is True else None
+        "GLIDING_ANGLE_GRAPH": fig_gliding_angle if plot is True else None,
+        "RATE_OF_DESCENT_GRAPH": fig_rate_of_descent if plot is True else None
     }
 
     return result
 
 def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gli=None, graph_V=False, graph_CL=False, display=False):
-
-    """
-    Calcula o alcance e a autonomia de uma aeronave em planagem entre duas altitudes.
-
-    Parâmetros:
-    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'SURFACE_AREA', 'CL_MAX', 'CD0', 'K', e 'TOW'.
-    - altitude_final: Altitude inicial em metros.
-    - altitude_inicial: Altitude final em metros.
-
-    Retorna:
-    Um dicionário contendo duas categorias de resultados:
-    1. Para voo com coeficiente de sustentação constante:
-        - "GLIDING_RANGE_CONSTANT_LIFT": Alcance em metros.
-        - "GLIDING_ENDURANCE_CONSTANT_LIFT": Autonomia em segundos.
-
-    2. Para voo com velocidade constante e coeficiente de sustentação variável:
-        - "GLIDING_RANGE_CONSTANT_AIRSPEED": Alcance em metros.
-        - "GLIDING_ENDURANCE_CONSTANT_AIRSPEED": Autonomia em segundos.
-
-    Notas:
-    - A função assume que as funções calc_cruise_velocity() e calculate_general_drag_coefficient() estão definidas e disponíveis no escopo.
-    - O parâmetro 'K' pode ser calculado em função de outros parâmetros como 'e' e 'AR'.
-    - O peso 'W' considerado deve ser definido claramente (ex: TOW).
-    """
 
     S = aircraft_parameters['S']
     CL_max = aircraft_parameters['CL_MAX']
@@ -171,34 +171,16 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
     rho_ssl = c.rho_0
 
     def gliding_range_endurance_constant_lift():
-        """
-        Cálculo do alcance máximo para CL constante.
-        1. Por padrão , o CL adotado é o CL máximo.
-        2. Também é calculado o alcance máximo, assim como a autonomia deste alcance máximo.
-            2.1 Para obter o alcance máximo, o CL e o CD são definidos como:
-                CL = ((CD0 / K)  ** 0.5)
-                CD = (2 * CD0)
-        3. É plotado um gráfico de alcance x CL para uma determinada altitude
 
-        Returns: dicionário contendo o resultado
-
-        """
         CD = c.calculate_general_drag_coefficient(CD0=CD0, K=K, CL=CL_max)
         E_st = CL_max / CD
-
-        CL_max_range_cond = (CD0 / K) ** 0.5
-        CD_max_range_cond = (2 * CD0)
-        E_max_range = CL_max_range_cond / CD_max_range_cond
-
-        CL_max_endurance_cond = (3 * CD0 / K) ** 0.5
-        CD_max_endurance_cond = 4 * CD0
-        E_max_endurance = CL_max_endurance_cond / CD_max_endurance_cond
 
         def get_x_cl(E_i):
             x_cl = E_i * (altitude_inicial - altitude_final)
             return x_cl
 
         def get_t_cl(E_i, CL_i):
+            # OHJA - 7.24
             t_cl = (2 * beta * E_i * ((rho_ssl * CL_i) / (2 * W / S))**0.5) * (math.e ** (-altitude_final/(2*beta)) - math.e ** (-altitude_inicial/(2*beta)))
             return t_cl
 
@@ -206,11 +188,19 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
         x_cl_st = get_x_cl(E_i=E_st)
         t_cl_st = get_t_cl(E_i=E_st, CL_i=CL_max)
 
-        # Caso de alcance máximo (2)
+        # Caso de alcance máximo para CL constante(2)
+        CL_max_range_cond = (CD0 / K) ** 0.5
+        CD_max_range_cond = (2 * CD0)
+        E_max_range = CL_max_range_cond / CD_max_range_cond
+
         x_cl_max_range = get_x_cl(E_i=E_max_range) # Alcance máximo
         t_cl_max_range = get_t_cl(E_i=E_max_range, CL_i=CL_max_range_cond)  # Autonomia do alcance máximo
         
-        # Caso de endurance máximo (3)
+        # Caso de endurance máximo para CL constante(3)
+
+        CL_max_endurance_cond = math.sqrt(3 * CD0 / K)
+        CD_max_endurance_cond = 4 * CD0
+        E_max_endurance = CL_max_endurance_cond / CD_max_endurance_cond
 
         t_cl_max_endurance = get_t_cl(E_i=E_max_endurance, CL_i=CL_max_endurance_cond)  # Autonomia máxima
         x_cl_max_endurance = get_x_cl(E_i=E_max_endurance)  # Alcance máximo da autonomia máxima
@@ -239,7 +229,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             ax_cl_constant.set_ylabel('Time [h]', color="black", fontsize=14)
 
             fig2 = ax_cl_constant.axvline(CL_max, c=colors['dark_green'], label="CLmax", ls="-.")
-            fig6 = ax_cl_constant.scatter(CL_max_range_cond, t_cl_max_range / 3600, label="Endurance of the maximum range", marker='>', color=colors['green'], s=50)
+            # fig6 = ax_cl_constant.scatter(CL_max_range_cond, t_cl_max_range / 3600, label="Endurance of the maximum range", marker='>', color=colors['green'], s=50)
 
             fig7 = ax_cl_constant.scatter(CL_max_endurance_cond, t_cl_max_endurance / 3600,
                                           label=f"Maximum Endurance = {round(t_cl_max_endurance / 3600, 2)}", marker='v', color=colors['red'], s=50)
@@ -252,13 +242,14 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             fig5 = ax2.scatter(CL_max_range_cond, x_cl_max_range / 1000,
                                label=f"Maximum Range = {round(x_cl_max_range / 1000, 2)}", marker ='<', color=colors['green'], s=50)
 
-            fig8 = ax2.scatter(CL_max_endurance_cond, x_cl_max_endurance / 1000, label="Range of the maximum endurance", marker='^', color=colors['red'], s = 50)
+            # fig8 = ax2.scatter(CL_max_endurance_cond, x_cl_max_endurance / 1000, label="Range of the maximum endurance", marker='^', color=colors['red'], s = 50)
 
             lines, labels = ax_cl_constant.get_legend_handles_labels()
             lines2, labels2 = ax2.get_legend_handles_labels()
             ax2.legend(lines + lines2, labels + labels2, loc=0)
 
             plt.title(f"Range & Endurance per Lift Coefficient\nfrom h2 = {altitude_inicial / 1000} [km] to h1 = {altitude_final / 1000} [km]", fontsize = 12)
+            plt.tight_layout()
             ax_cl_constant.grid()
 
             if display is True:
@@ -284,8 +275,6 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
     def gliding_range_endurance_constant_airspeed():
 
         V_gli = flight_parameters['GLIDING_VELOCITY']
-
-        V = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters) if V_gli is None else V_gli
 
         def get_A_B(V_i):
 
@@ -314,25 +303,19 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             return t_v
 
         # Caso padrão (1)
-        A_st, B_st = get_A_B(V_i=V)
+        A_st, B_st = get_A_B(V_i=V_gli)
         x_v_st = get_x_v(A_i=A_st, B_i=B_st)
-        t_v_st = get_t_v(V_i=V)
+        t_v_st = get_t_v(V_i=V_gli)
 
         # Caso máximo alcance (página 200, equação 7.38)
-        V_max_range = ((3 ** (1/2) * K) / CD0) ** (1/4) * (2 * (W / S) / rho_ssl) ** (1/2) * math.e ** ((altitude_inicial + altitude_final) / (8 * beta))
+        V_max_range = ((math.sqrt(3) * K) / CD0) ** (1/4) * math.sqrt(2 * (W / S) / rho_ssl) * math.e ** ((altitude_inicial + altitude_final) / (8 * beta))
         A_v_max_range, B_v_max_range = get_A_B(V_i=V_max_range)
         x_v_max_range = get_x_v(A_i=A_v_max_range, B_i=B_v_max_range)
         t_v_max_range = x_v_max_range / V_max_range # Ou get_t_v(CD0_i=CD0, V_i=V_max_range)
 
-        #TODO: implementar razao de descida e angulo de planeio ? Esses valores são calculados numa altitude em especifico
-        # Página 201
-        #CL_v_max_range = CD0/(3 * K) ** 0.5 * math.e
-        #CD_v_max_range = AA
-        #E_v_max = CL_v_max_range / CD_v_max_range
-
 
         # Caso máxima autonomia (página 205, equação 7.56)
-        V_max_endurance = (5/3) ** (1/8) * ((2 * W/S) / rho_ssl) ** (1/2) * (K/CD0)**(1/4) * math.e ** ((altitude_inicial + altitude_final) / (8*beta))
+        V_max_endurance = (5/3) ** (1/8) * math.sqrt((2 * W/S) / rho_ssl) * (K/CD0)**(1/4) * math.e ** ((altitude_inicial + altitude_final) / (8*beta))
         A_v_max_endurance, B_v_max_endurance = get_A_B(V_i=V_max_endurance)
         x_v_max_endurance = get_x_v(A_i=A_v_max_endurance, B_i=B_v_max_endurance)
         t_v_max_endurance = x_v_max_endurance / V_max_endurance  # Ou get_t_v(CD0_i=CD0, V_i=V_max_endurance)
@@ -341,7 +324,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
         if graph_V is True:
             V_i_list, x_v_i_list, t_v_i_list = [], [], []
 
-            for V_i in linspace(0.1 * min(V, V_max_endurance, V_max_range), 1.2 * max(V, V_max_endurance, V_max_range), 100):
+            for V_i in linspace(0.1 * min(V_gli, V_max_endurance, V_max_range), 1.2 * max(V_gli, V_max_endurance, V_max_range), 100):
 
                 A_i, B_i = get_A_B(V_i=V_i)
                 x_v_i = get_x_v(A_i=A_i, B_i=B_i)
@@ -357,8 +340,8 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             ax_v_constant.set_xlabel("Velocity (m/s)", fontsize=14)
             ax_v_constant.set_ylabel('Time [h]', color="black", fontsize=14)
 
-            fig2 = ax_v_constant.axvline(V, c=colors["dark_green"], label="Cruise Velocity", ls = "-.")
-            fig6 = ax_v_constant.scatter(V_max_range, t_v_max_range / 3600, label="Endurance of the maximum range", marker='<', color=colors['green'],s=50)
+            fig2 = ax_v_constant.axvline(V_gli, c=colors["dark_green"], label="Gliding Velocity", ls = "-.")
+            # fig6 = ax_v_constant.scatter(V_max_range, t_v_max_range / 3600, label="Endurance of the maximum range", marker='<', color=colors['green'],s=50)
 
             fig7 = ax_v_constant.scatter(V_max_endurance, t_v_max_endurance / 3600,
                                          label=f"Maximum Endurance = {round(t_v_max_endurance / 3600, 2)}", marker='^', color=colors['red'], s=50)
@@ -372,7 +355,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             fig5 = ax2.scatter(V_max_range, x_v_max_range / 1000,
                                label=f"Maximum Range = {round(x_v_max_range / 1000, 2)}", marker='>', color=colors['green'], s=50)
 
-            fig8 = ax2.scatter(V_max_endurance, x_v_max_endurance / 1000, label="Range of the maximum endurance", marker='v', color=colors['red'], s=50)
+            # fig8 = ax2.scatter(V_max_endurance, x_v_max_endurance / 1000, label="Range of the maximum endurance", marker='v', color=colors['red'], s=50)
 
             lines, labels = ax_v_constant.get_legend_handles_labels()
             lines2, labels2 = ax2.get_legend_handles_labels()
@@ -380,6 +363,7 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
 
             plt.title(f"Range & Endurance per Velocity \nfrom h2 = {altitude_inicial / 1000} [km] to h1 = {altitude_final / 1000} [km]", fontsize=12)
             ax_v_constant.grid()
+            plt.tight_layout()
 
             if display is True:
                 plt.show()

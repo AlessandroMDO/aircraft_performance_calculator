@@ -9,6 +9,7 @@ aero = Aero()
 
 
 def get_climb_parameters(altitude):
+
     if altitude <= 11000:
         e = 1
         h_rix = 0
@@ -42,7 +43,7 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
 
-    W = TOW - 0.02 * FW
+    W = TOW - 0.10 * FW
 
     altitude = flight_parameters['CRUISE_ALTITUDE'] / 2 if ALTITUDE_GLI is None else ALTITUDE_GLI
     rho = aero.get_density(altitude=altitude)
@@ -53,7 +54,7 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
 
     T0 = aircraft_parameters['T0']
     T = T0 * aircraft_parameters['NE']
-    n = aircraft_parameters['TSFC'] / 3600
+    n = (aircraft_parameters['TSFC'] / 3600)
 
     T_Em_SSL = aero.calculate_general_thrust(thrust_factor=n, altitude=0, sea_level_thrust=T)
     logger.debug(f"calc_max_climb_angle_rate_of_climb| T_Em_SSL: {T_Em_SSL}")
@@ -61,21 +62,29 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
 
     logger.debug(f"calc_max_climb_angle_rate_of_climb| T_Em_SSL/W : {T_Em_SSL / W}")
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
     logger.debug(f"E_m: {E_m}")
 
-    # 18.21 Gud Max Gamma (Steepest Climb)
-    # gamma_max = math.asin((T_Em_SSL * sigma / W) - math.sqrt(4 * CD0 * K))
-
-    # # 10.30 - OJHA
+    # # 10.30 - OJHA - Max Gamma (Steepest Climb)
     gamma_max = (T_Em_SSL * sigma / W) - (1 / E_m)
     logger.debug(f"Max Gamma: {gamma_max}")
 
 
     # Gud - 18.25 Max Rate of Climb (Fastest Climb)
-    Z = 1 + math.sqrt(1 + 3/(E_m ** 2 / ((T_Em_SSL * sigma)/W)**2))
-    h_max = ((math.sqrt((W * Z / S)/(3 * rho * CD0)) * (T_Em_SSL * sigma/W)**1.5) *
-             (1 - Z/6) - (3 * 1)/(2 * (T_Em_SSL * sigma / W) ** 2 * (E_m ** 2) * Z))
+    # Z = 1 + math.sqrt(1 + 3/(E_m ** 2 / ((T_Em_SSL * sigma)/W)**2))
+    #
+    # h_max = ((math.sqrt((W * Z / S)/(3 * rho * CD0)) * (T_Em_SSL * sigma/W)**1.5) *
+    #          (1 - Z/6) - (3 * 1)/(2 * (T_Em_SSL * sigma / W) ** 2 * (E_m ** 2) * Z))
+
+    TT = 1 + math.sqrt(1 + 3/(E_m**2 * (T_Em_SSL * sigma/W)**2))
+
+    h_max = (
+            math.sqrt(((W/S)*TT)/(3 * aero.rho_0*CD0)) *
+            (T_Em_SSL/W)**1.5 *
+            (1 - TT/6) *
+            (sigma - 1/(
+                (2*TT/3)*(1-TT/6)*(E_m**2)*(T_Em_SSL/W)**2 * sigma
+            )))
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, queremos computar o valor
@@ -104,7 +113,6 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
         filter_V_linspace = [V_linspace[i] for i, v in enumerate(h_dot_list) if v >= 0]
 
         fig_climb = plt.figure(figsize=(5, 5))
-        # plt.plot(V_linspace, h_dot_list, c='black')
         plt.plot(filter_V_linspace, filter_h_dot_list, c='black')
         plt.xlabel("Velocity [m/s]", size=12)
         plt.ylabel("Rate of Climb [m/s]", size=12)
@@ -140,14 +148,14 @@ def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_paramete
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
 
     W0 = TOW
-    W = TOW - 0.02 * FW
+    W = TOW - 0.10 * FW
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
     climb_parameters = get_climb_parameters(altitude=altitude)
 
     T0 = aircraft_parameters['T0']
     T = T0 * aircraft_parameters['NE']
-    n = aircraft_parameters['TSFC'] / 3600
+    n = (aircraft_parameters['TSFC'] / 3600)
 
     T_Em_SSL = aero.calculate_general_thrust(thrust_factor=n, altitude=0, sea_level_thrust=T)
 
@@ -164,7 +172,7 @@ def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_paramete
     beta = climb_parameters['beta']
     h_rix = climb_parameters['h_rix']
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
     logger.debug(f"E_m: {E_m}")
 
     A = math.sqrt(W / W0) * (V_Em_SSL / E_m)  # 10.36
@@ -182,9 +190,34 @@ def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_paramete
 
     x_sc = beta * E_m * math.log(x1 / x2)
 
+    climb_parameters_h1 = get_climb_parameters(altitude=h1)
+    climb_parameters_h2 = get_climb_parameters(altitude=h2)
+
+    e_1, e_2 = climb_parameters_h1['e'], climb_parameters_h2['e']
+    beta_1, beta_2 = climb_parameters_h1['beta'], climb_parameters_h2['beta']
+    hrix_1, hrix_2 = climb_parameters_h1['h_rix'], climb_parameters_h2['h_rix']
+
+
+    sigma_1 = e_1 * math.exp(-(h1-hrix_1)/beta_1)
+    sigma_2 = e_2 * math.exp(-(h2-hrix_2)/beta_2)
+
+    #OJHA - 10.52
+    zeta_sc = (
+            1 -
+            math.exp(
+                (2*beta*n*(T_Em_SSL/W))/(A*B) *
+                ((math.sqrt(sigma_2) - math.sqrt(sigma_1)) +
+                 (1/(2*math.sqrt(B))) * math.log(((math.sqrt(B*sigma_2) - 1)*(math.sqrt(B*sigma_2) + 1))/((math.sqrt(B*sigma_1) + 1)*(math.sqrt(B*sigma_1) - 1)))
+                 )
+            )
+    )
+
+    logger.debug(f"zeta_sc: {zeta_sc}")
+
     return {
         "STEEPEST_CLIMB_TIME": t_sc,
-        "STEEPEST_CLIMB_DISTANCE": x_sc
+        "STEEPEST_CLIMB_DISTANCE": x_sc,
+        "STEEPEST_CLIMB_FUEL_CONSUPTION": zeta_sc
     }
 
 
@@ -206,12 +239,12 @@ def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
 
     T0 = aircraft_parameters['T0']
     T = T0 * aircraft_parameters['NE']
-    n = aircraft_parameters['TSFC'] / 3600
+    n = (aircraft_parameters['TSFC'] / 3600)
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
     T_Em_SSL = aero.calculate_general_thrust(thrust_factor=n, altitude=0, sea_level_thrust=T)
 
-    W = TOW - 0.02 * FW
+    W = TOW - 0.10 * FW
 
     roc_linspace = []
 
@@ -221,9 +254,22 @@ def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
         sigma_i = aero.get_sigma(altitude=altitude_i)
 
         # 18.25 Gud Max Rate of Climb (Fastest Climb)
-        Z_i = 1 + math.sqrt(1 + 3 / (E_m ** 2 / ((T_Em_SSL * sigma_i) / W) ** 2))
-        h_max_i = ((math.sqrt((W * Z_i / S) / (3 * rho_i * CD0)) * (T_Em_SSL * sigma_i / W) ** 1.5) *
-                 (1 - Z_i / 6) - (3 * 1) / (2 * (T_Em_SSL * sigma_i / W) ** 2 * (E_m ** 2) * Z_i))
+        # Z_i = 1 + math.sqrt(1 + 3 / ((E_m ** 2) / ((T_Em_SSL * sigma_i) / W) ** 2))
+        #
+        # h_max_i = ((math.sqrt((W * Z_i / S) / (3 * rho_i * CD0)) * (T_Em_SSL * sigma_i / W) ** 1.5) *
+        #          (1 - Z_i / 6) - (3 * 1) / (2 * (T_Em_SSL * sigma_i / W) ** 2 * (E_m ** 2) * Z_i))
+
+
+        #OJHA - 10.65
+        TT_i = 1 + math.sqrt(1 + 3 / (E_m ** 2 * (T_Em_SSL * sigma_i / W) ** 2))
+
+        h_max_i = (
+                math.sqrt(((W / S) * TT_i) / (3 * aero.rho_0 * CD0)) *
+                (T_Em_SSL / W) ** 1.5 *
+                (1 - TT_i / 6) *
+                (sigma_i - 1 / (
+                        (2 * TT_i / 3) * (1 - TT_i / 6) * (E_m ** 2) * (T_Em_SSL / W) ** 2 * sigma_i
+                )))
 
         roc_linspace.append(h_max_i)
 
@@ -252,7 +298,6 @@ def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
     }
 
 
-#TODO: calcular tempo e distancia para fastesp climb
 def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameters: dict):
 
     logger = get_logger(log_name="CLIMB")
@@ -267,13 +312,13 @@ def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameter
     OEW = aircraft_parameters['OEW']
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
 
-    W = TOW - 0.01 * FW
+    W = TOW - 0.10 * FW
 
     T0 = aircraft_parameters['T0']
     T = T0 * aircraft_parameters['NE']
-    n = aircraft_parameters['TSFC'] / 3600
+    n = (aircraft_parameters['TSFC'] / 3600)
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
     T_Em_SSL = aero.calculate_general_thrust(thrust_factor=n, altitude=0, sea_level_thrust=T)
     logger.debug(f"calc_distance_time_fastest_climb | T_Em_SSL: {T_Em_SSL}")
     logger.debug(f"calc_distance_time_fastest_climb | W: {W}")
@@ -292,6 +337,7 @@ def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameter
     h_rix = climb_parameters['h_rix']
 
 
+    # OJHA - 10.62
     TT = (1 +
           math.sqrt(1 +
                     3/(E_m**2 * (T_Em_SSL/W)**2 * sigma**2)
@@ -332,7 +378,6 @@ def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameter
     logger.debug(f"calc_distance_time_fastest_climb | x_fc_23: {x_fc_22}")
     logger.debug(f"calc_distance_time_fastest_climb | x_fc: {x_fc/1000}")
 
-    # TODO: calcular consumo de combustivel
     # OHJA - 10.76
     zeta_fc_1 = math.sqrt(
         (3*aero.rho_0*CD0) /
@@ -347,10 +392,18 @@ def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameter
     zeta_fc = 1 - math.exp(zeta_fc_1 * zeta_fc_2 * math.log(zeta_fc_31/zeta_fc_32))
     logger.debug(f"calc_distance_time_fastest_climb | zeta_fc: {zeta_fc}")
 
+    W_1 = W
+    W_2 = W_1 * (1 - zeta_fc)
+    delta_fuel = W_1 - W_2
+    percent_reduction = delta_fuel / W_1
+    logger.debug(f"calc_distance_time_fastest_climb | delta_fuel: {delta_fuel}")
+    logger.debug(f"calc_distance_time_fastest_climb | percent_reduction: {percent_reduction * 1000}")
+
     return {
         "FASTEST_CLIMB_TIME": t_fc,
         "FASTEST_CLIMB_DISTANCE": x_fc,
-        "FASTEST_CLIMB_FUEL_CONSUPTION": zeta_fc
+        "FASTEST_CLIMB_FUEL_CONSUPTION": zeta_fc,
+        "FASTEST_CLIMB_FUEL_CONSUMED": delta_fuel
     }
 
 

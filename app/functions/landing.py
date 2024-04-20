@@ -25,6 +25,8 @@ sys.path.append(parent_dir)
 
 from functions.aero import Aero
 import math
+from pandas import DataFrame
+from numpy import linspace
 
 aero = Aero()
 
@@ -33,13 +35,13 @@ aero = Aero()
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
-def calc_landing_distance(aircraft_parameters: dict, flight_parameters: dict):
+def calc_total_landing_distance(aircraft_parameters: dict, flight_parameters: dict, altitude=None):
 
     gamma_Ap = aero.gamma_Ap
     V_wind = flight_parameters['landing_parameters']['WIND_VELOCITY_LANDING']
 
     S  = aircraft_parameters['S']
-    altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING']
+    altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING'] if altitude is None else altitude
     mu = flight_parameters['landing_parameters']['MU_LANDING']
     CL_max = aircraft_parameters['CL_MAX']
     rho = aero.get_density(altitude=altitude)
@@ -81,13 +83,14 @@ def calc_landing_distance(aircraft_parameters: dict, flight_parameters: dict):
 
     return landing_distance_result
 
-def calc_landing_time(aircraft_parameters: dict, flight_parameters: dict):
+
+def calc_total_landing_time(aircraft_parameters: dict, flight_parameters: dict, altitude=None):
     gamma_Ap = aero.gamma_Ap
 
     V_wind = flight_parameters['landing_parameters']['WIND_VELOCITY_LANDING']
 
     S = aircraft_parameters['S']
-    altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING']
+    altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING'] if altitude is None else altitude
     mu = flight_parameters['landing_parameters']['MU_LANDING']
     CL_max = aircraft_parameters['CL_MAX']
     rho = aero.get_density(altitude=altitude)
@@ -129,4 +132,27 @@ def calc_landing_time(aircraft_parameters: dict, flight_parameters: dict):
         "LANDING_FLARE_TIME": t_f}
 
     return landing_time_result
+
+
+def calc_landing_distance_time_per_altitude(flight_parameters, aircraft_parameters, altitude=None):
+
+    landing_altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING'] if altitude is None else altitude
+
+    altitude_range = [round(i, -1) for i in linspace(0.5 * landing_altitude, min(30 * landing_altitude, 3500), 10)]
+
+    landing_distance_range = [
+        round(calc_total_landing_distance(flight_parameters=flight_parameters, aircraft_parameters=aircraft_parameters,
+                                          altitude=alti)['LANDING_DISTANCE'], 2)
+        for alti in altitude_range]
+
+    landing_time_range = [
+        round(calc_total_landing_time(flight_parameters=flight_parameters, aircraft_parameters=aircraft_parameters,
+                                      altitude=alti)['LANDING_TIME'], 2)
+        for alti in altitude_range]
+
+    df = DataFrame(index=altitude_range, data={
+        'Landing Distance [m]': landing_distance_range, 'Landing Time [s]': landing_time_range})
+    df.index.name = 'Altitude [m]'
+
+    return df
 

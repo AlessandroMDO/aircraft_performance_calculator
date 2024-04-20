@@ -12,6 +12,7 @@ sys.path.append(parent_dir)
 
 # Página 325 OKJA
 import sys
+
 sys.path.append('functions')
 from .utils import hash_dict, print_formatted_string, get_logger, linspace
 import matplotlib.pyplot as plt
@@ -21,21 +22,21 @@ import math
 from functools import lru_cache
 from .aero import Aero
 
-
 aero = Aero()
 
-def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_STALL=None, T_CRUISE=None, plot=False, display=False):
 
+def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_STALL=None,
+                         T_CRUISE=None, plot=False, display=False):
     altitude = flight_parameters['CRUISE_ALTITUDE']
     sigma = aero.get_sigma(altitude=altitude)
 
-    rho_0  = aero.rho_0
-    T0     = aircraft_parameters['T0']
-    T      = T0 * aircraft_parameters['NE']
-    S      = aircraft_parameters['S']
-    CD0    = aircraft_parameters['CD0']
-    K      = aircraft_parameters['K']
-    n      = aircraft_parameters['TSFC'] / 3600
+    rho_0 = aero.rho_0
+    T0 = aircraft_parameters['T0']
+    T = T0 * aircraft_parameters['NE']
+    S = aircraft_parameters['S']
+    CD0 = aircraft_parameters['CD0']
+    K = aircraft_parameters['K']
+    n = (aircraft_parameters['TSFC'] / 3600)
     CL_max = aircraft_parameters['CL_MAX']
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
@@ -44,15 +45,17 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
     OEW = aircraft_parameters['OEW']
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
+
     # TOW - (50% do combustível)
     W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
 
-    T_CRU = aero.calculate_general_thrust(altitude=altitude, sea_level_thrust=T, thrust_factor=n) if T_CRUISE is None else T_CRUISE
+    T_CRU = aero.calculate_general_thrust(altitude=altitude, sea_level_thrust=T,
+                                          thrust_factor=n) if T_CRUISE is None else T_CRUISE
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
-    V_11 = (T_CRU * sigma ** n)/(sigma * rho_0 * S * CD0)
-    V_12 = 1 - (1/(E_m ** 2))*((W ** 2) / ((T_CRU * sigma ** n) ** 2))
+    V_11 = (T_CRU * sigma ** n) / (sigma * rho_0 * S * CD0)
+    V_12 = 1 - (1 / (E_m ** 2)) * ((W ** 2) / ((T_CRU * sigma ** n) ** 2))
 
     V_1 = V_11 * (1 + math.sqrt(V_12))
     V_2 = V_11 * (1 - math.sqrt(V_12))
@@ -65,7 +68,8 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
         # Selecionamos a maior velocidade de cruzeiro
-        V_cru = max(V_cru_1, V_cru_2) if (V_cru_1 > V_S and V_cru_2 > V_S) else V_cru_1 if (V_cru_1 > V_S > V_cru_2) else V_cru_2
+        V_cru = max(V_cru_1, V_cru_2) if (V_cru_1 > V_S and V_cru_2 > V_S) else V_cru_1 if (
+                    V_cru_1 > V_S > V_cru_2) else V_cru_2
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
 
@@ -73,14 +77,13 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
 
     if plot is True:
 
-        lista_arrasto_total    = []
+        lista_arrasto_total = []
         lista_arrasto_parasita = []
         lista_arrasto_induzido = []
 
-        v_range = linspace(max(0.1*V_cru, 50), min(V_cru + 300, 600), 50)
+        v_range = linspace(max(0.1 * V_cru, 50), min(V_cru + 300, 600), 50)
 
         for v in v_range:
-
             arrasto_parasita = 0.5 * sigma * rho_0 * (v ** 2) * S * CD0
             arrasto_induzido = (2 * K * W ** 2) / (sigma * rho_0 * S * v ** 2)
 
@@ -95,7 +98,8 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
         plt.plot(v_range, [i / 1e3 for i in lista_arrasto_parasita], c='black', ls='--', label="Parasitic Drag")
         plt.plot(v_range, [i / 1e3 for i in lista_arrasto_induzido], c='black', ls='-.', label="Induced Drag")
         plt.plot(v_range, [T_CRU / 1e3] * len(v_range), label="Thrust", ls=(0, (5, 10)), color='black')
-        plt.scatter(v_range[lista_arrasto_total.index(min(lista_arrasto_total))], min(lista_arrasto_total) / 1e3, c='black', label=f"Minimum Drag = {round(D_min / 1e3, 2)}")
+        plt.scatter(v_range[lista_arrasto_total.index(min(lista_arrasto_total))], min(lista_arrasto_total) / 1e3,
+                    c='black', label=f"Minimum Drag = {round(D_min / 1e3, 2)}")
         plt.xlabel("Velocity [m/s]", size=12)
         plt.ylabel("Drag [kN]", size=12)
         plt.title("Thrust and drag per velocity")
@@ -107,7 +111,6 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
         else:
             pass
 
-
     result = {
         "CRUISE_VELOCITY": V_cru,
         "MINIMUM_DRAG": D_min,
@@ -118,9 +121,8 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
     return result
 
 
-def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, W_CRUISE=None, zeta_CRUISE=None,
-                            plot=False, display=False):
-
+def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, W_CRUISE=None,
+                            zeta_CRUISE=None, plot=False, display=False):
     # 9.3.1 - Maximum Range of constant altitude-constant lift coefficient flight (página 239)
     # 9.3.2 - Maximum Range of constant airspeed-constant lift coefficient flight (página 241)
     # 9.3.3 - Maximum Range of constant altitude-airspeed (página 243)
@@ -148,14 +150,15 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     - A função assume que a função calc_cruise_velocity() está definida e disponível no escopo.
     """
 
-    c = aircraft_parameters['TSFC'] / 3600
+    c = (aircraft_parameters['TSFC'] / 3600)
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
     logger.debug(f"calc_cruising_jet_range| Altitude: {altitude}")
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
-        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)[
+            'CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
 
@@ -164,9 +167,9 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
 
-    NP  = flight_parameters['NUMBER_OF_PASSENGERS']     # number of passengers
-    FW  = flight_parameters['FUEL_WEIGHT']              # fuel weight
-    CW  = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
 
     sigma = aero.get_sigma(altitude=altitude)
@@ -175,10 +178,7 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
     logger.debug(f"TOW: {TOW}")
 
-    # TODO: Revisar esta proporção no valor do zeta
-    # If DeltaW is the weight of fuel consumed during the cruise
-
-    W_1 = TOW - 0.1 * FW
+    W_1 = TOW - 0.15 * FW
     logger.info(f"W_1: {W_1}")
     W_2 = TOW - 0.95 * FW
 
@@ -196,7 +196,7 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     E_cru = CL_cru / CD_cru
     logger.debug(f"E_cru: {E_cru}")
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     # -----------------------------------------------------------------------------------------------------------------#
     # CASE 1 - Range and Flight Parameters of Constant Altitude-Constant Lift Coefficient Flight
@@ -206,7 +206,8 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     E_m_h_CL = 1 / (2 * math.sqrt(K * CD0))
 
     # OJHA 9.16
-    x_mr_h_CL = math.sqrt(3 * math.sqrt(3) * 0.5) * math.sqrt((2 * W_1/ S)/(aero.rho_0 * sigma)) * (math.sqrt(E_m_h_CL / CD0)/c) * (1 - math.sqrt(1 - zeta))
+    x_mr_h_CL = math.sqrt(3 * math.sqrt(3) * 0.5) * math.sqrt((2 * W_1 / S) / (aero.rho_0 * sigma)) * (
+                math.sqrt(E_m_h_CL / CD0) / c) * (1 - math.sqrt(1 - zeta))
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 2 - Range and Flight Parameters of Constant Airspeed-Constant Lift Coefficient Flight
     # OJHA - 8.23
@@ -215,27 +216,30 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     t_loiter = 1.16 * (x_V_CL / V_cru)  # Approximate Method of Deriving Loiter Time from Range (Eq 9)
 
     E_m_V_CL = 1 / (2 * math.sqrt(K * CD0))  # Equação 9.15 [OK]
-    V1_Em = math.sqrt((2 * W_1 / S)/(aero.rho_0 * sigma)) * (K/CD0) ** 0.25  # Equação 9.15 [OK]
+    V1_Em = math.sqrt((2 * W_1 / S) / (aero.rho_0 * sigma)) * (K / CD0) ** 0.25  # Equação 9.15 [OK]
 
-    E_mr_V_CL = math.sqrt(3) * E_m_V_CL / 2  # Equação 9.23 [OK]
-    V_mr_V_CL = (3 ** 0.25) * V1_Em  # Equação 9.21 [OK]
+    # E_mr_V_CL = math.sqrt(3) * E_m_V_CL / 2  # Equação 9.23 [OK]
+    # V_mr_V_CL = (3 ** 0.25) * V1_Em  # Equação 9.21 [OK]
 
-    x_mr_V_CL = (E_mr_V_CL * V_mr_V_CL / c) * math.log(1 / (1 - zeta))  # Equação 9.24 [OK]
+    # x_mr_V_CL = (E_mr_V_CL * V_mr_V_CL / c) * math.log(1 / (1 - zeta))  # Equação 9.24 [OK]
+
+    # Equação 9.26 [OK]
+    x_mr_V_CL = (1 / (2 * c)) * math.sqrt(3 * math.sqrt(3) / 2) * math.sqrt(
+        (2 * W_1 / S) / (aero.rho_0 * sigma)) * math.sqrt(E_m / CD0) * math.log(1 / (1 - zeta))
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
     # OJHA - 8.35
     x_h_V = ((2 * V_cru * E_m) / c) * math.atan(E_cru * zeta / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
 
-    E_mr_h_V = math.sqrt(3) * E_m_V_CL / 2  # Equação 9.23
     zeta_rix = zeta
 
-    # Equação 9.47
+    # OJHA - Equação 9.47
     x_mr_h_V = (
-            ((1/c) * math.sqrt(2 * E_mr_h_V / CD0)) *
-            math.sqrt((2 * W_1 * S) / (aero.rho_0 * sigma)) *
-            ((3*(1 - zeta_rix)) ** 0.25) *
-            math.atan((zeta * math.sqrt(3*(1 - zeta_rix))) / ((1 - zeta) + 3*(1 - zeta_rix))))
+            ((1 / c) * math.sqrt(2 * E_m / CD0)) *
+            math.sqrt((2 * W_1 / S) / (aero.rho_0 * sigma)) *
+            ((3 * (1 - zeta_rix)) ** 0.25) *
+            math.atan((zeta * math.sqrt(3 * (1 - zeta_rix))) / ((1 - zeta) + 3 * (1 - zeta_rix))))
 
     ranges = {
         "RANGE_CONSTANT_HEIGHT_CL": round(x_h_CL, 2),
@@ -257,17 +261,18 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
 # -------------------------------------------------------------------------------------------------------------------- #
 
 
-def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_CRUISE=None, zeta_CRUISE=None, show=False):
+def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict,
+                                W_CRUISE=None, V_CRUISE=None, zeta_CRUISE=None, show=False):
+    logger = get_logger(log_name="Cruise")
 
-    logger = get_logger()
-
-    c = aircraft_parameters['TSFC'] / 3600
+    c = (aircraft_parameters['TSFC'] / 3600)
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
-        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)[
+            'CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
 
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
@@ -277,9 +282,9 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
 
-    NP  = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
-    FW  = flight_parameters['FUEL_WEIGHT']  # fuel weight
-    CW  = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
 
     sigma = aero.get_sigma(altitude=altitude)
@@ -288,46 +293,48 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
     TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
     logger.debug(f"TOW: {TOW}")
 
-    W_1 = TOW - 0.1 * FW
+    W_1 = TOW - 0.15 * FW
     logger.info(f"W_1: {W_1}")
-    W_2 = TOW - 0.9 * FW
+    W_2 = TOW - 0.95 * FW
+
     zeta = ((W_1 - W_2) / W_1) if zeta_CRUISE is None else zeta_CRUISE
+    logger.debug(f"calc_cruising_jet_endurance | zeta: {sigma}")
 
     CD0 = aircraft_parameters['CD0']
     CL_cru = (2 * W_1) / (S * aero.rho_0 * sigma * V_cru ** 2)
 
-    CD_cru = CD0 + K * CL_cru ** 2
+    CD_cru = CD0 + K * (CL_cru ** 2)
     E_cru = CL_cru / CD_cru
 
-    E_m = 1 / (2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 1 - Range and Flight Parameters of Constant Altitude-Constant Lift Coefficient Flight
     t_h_CL = (E_cru / c) * math.log(1 / (1 - zeta))
 
-    E_t_m_h_CL = 1 / (2 * math.sqrt(K * CD0))
+    E_t_m_h_CL = E_m
     t_m_h_CL = (E_t_m_h_CL / c) * math.log(1 / (1 - zeta))  # Equação 9.79 [OK]
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 2 - Range and Flight Parameters of Constant Airspeed-Constant Lift Coefficient Flight
     t_V_CL = (E_cru / c) * math.log(1 / (1 - zeta))
 
-    E_t_m_V_CL = 1 / (2 * math.sqrt(K * CD0))
-    t_m_V_CL = (E_t_m_V_CL / c) * math.log(1 / (1 - zeta))
+    E_t_m_V_CL = E_m
+    t_m_V_CL = (E_t_m_V_CL / c) * math.log(1 / (1 - zeta))  # Equação 9.79 [OK]
 
     # -----------------------------------------------------------------------------------------------------------------#
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
     t_h_V = (2 * E_m / c) * math.atan((E_cru * zeta) / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
 
     zeta_rix = zeta
-    E_t_m_h_V = 1 / (2 * math.sqrt(K * CD0))
-    # Equação 9.85
+    E_t_m_h_V = E_m
+
+    # Equação 9.85 [OK]
     t_m_h_V = (
-        (2 * E_t_m_h_V / c) *
-        math.atan((zeta * math.sqrt(1 - zeta_rix)) / ((1 - zeta) + (1 - zeta_rix)))
+            (2 * E_t_m_h_V / c) *
+            math.atan(
+                (zeta * math.sqrt(1 - zeta_rix)) / ((1 - zeta) + (1 - zeta_rix)))
     )
-
-
 
     endurance = {
         "ENDURANCE_CONSTANT_HEIGHT_CL": t_h_CL,
@@ -347,13 +354,10 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
 # ------------------------------------------------- PAYLOAD x RANGE -------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------------- #
 
-
-#TODO: Ajustar gráfico payload x range
 def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False):
+    logger = get_logger(log_name="Cruise")
 
-    logger = get_logger()
-
-    n = aircraft_parameters['TSFC'] / 3600
+    n = (aircraft_parameters['TSFC'] / 3600)
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
@@ -363,11 +367,13 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
-        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)['CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)[
+            'CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
 
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
 
+    MFW = aircraft_parameters['FUEL_WEIGHT']  # max fuel weight
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
     CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
@@ -375,8 +381,7 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     MTOW = aircraft_parameters['MTOW']
     logger.debug(f"calc_payload_x_range | MTOW : {MTOW}")
 
-
-    E_m = 1/(2 * math.sqrt(K * CD0))
+    E_m = aircraft_parameters['E_m']
 
     def range_iter(W, zeta):
 
@@ -384,7 +389,6 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
 
         for V_i in linspace(V_cru - 50, V_cru + 50, 20):
             for h_i in linspace(h_cru - 2000, h_cru + 2000, 10):
-
                 rho_i = aero.get_density(altitude=h_i)
                 CL_i = (2 * W) / (S * rho_i * V_i ** 2)
                 CD_i = CD0 + K * CL_i ** 2
@@ -393,32 +397,31 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
                 # -----------------------------------------------------------------------------------------------------------------#
                 # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
 
-                x_h_V = (2 * V_i * E_i/n) * math.atan((E_i * zeta) / (2 * E_m * (1 - K*E_i*CL_i*zeta)))
+                x_h_V = (2 * V_i * E_i / n) * math.atan((E_i * zeta) / (2 * E_m * (1 - K * E_i * CL_i * zeta)))
 
                 range_list.append(x_h_V)
 
         return max(range_list)
 
-    FW = 1.1*FW
-
-    y_A = float(NP * aero.person_weight + CW) / aero.g
-    y_B = float(NP * aero.person_weight + CW) / aero.g
-    y_C = max((MTOW - OEW - FW) / aero.g, 0)
+    y_A = float(
+        NP * aero.person_weight + CW) / aero.g  # condição de máxima carga paga, porém sem combustível (alcance zero)
+    y_B = float(NP * aero.person_weight + CW) / aero.g  # MTOW
+    y_C = max((MTOW - OEW - MFW) / aero.g, 0)  # Aumenta o combustível, porém reduz carga paga
     logger.debug(f"calc_payload_x_range | y_C : {y_C}")
-    y_D = 0
+    y_D = 0  # Zero carga paga
 
-    zeta_B = (MTOW - OEW - FW)/MTOW
+    zeta_B = (MTOW - OEW - MFW) / MTOW
     logger.debug(f"calc_payload_x_range | zeta_B : {zeta_B}")
-    zeta_C = FW / MTOW
+    zeta_C = MFW / MTOW
     logger.debug(f"calc_payload_x_range | zeta_C : {zeta_C}")
-    zeta_D = FW / (FW + OEW)
+    zeta_D = MFW / (MFW + OEW)
     logger.debug(f"calc_payload_x_range | zeta_D : {zeta_D}")
 
     # Alcance nos pontos principais:
     x_A = 0
     x_B = range_iter(zeta=zeta_B, W=MTOW)
     x_C = range_iter(zeta=zeta_C, W=MTOW)
-    x_D = range_iter(zeta=zeta_D, W=OEW + FW)
+    x_D = range_iter(zeta=zeta_D, W=OEW + MFW)
 
     # Ponto A:
     xy_A = [x_A / 1000, y_A / 1000]
@@ -440,14 +443,14 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     plt.scatter(xy_C[0], xy_C[1], c="#1D3D7B")
     plt.scatter(xy_D[0], xy_D[1], c="#1D3D7B")
 
-    plt.annotate(text = "A", xy = (xy_A[0], xy_A[1]))
-    plt.annotate(text = "B", xy = (xy_B[0], xy_B[1]))
-    plt.annotate(text = "C", xy = (xy_C[0], xy_C[1]))
-    plt.annotate(text = "D", xy = (xy_D[0], xy_D[1]))
+    plt.annotate(text="A", xy=(xy_A[0], xy_A[1]))
+    plt.annotate(text="B", xy=(xy_B[0], xy_B[1]))
+    plt.annotate(text="C", xy=(xy_C[0], xy_C[1]))
+    plt.annotate(text="D", xy=(xy_D[0], xy_D[1]))
 
     plt.ylabel("Payload [kN]", fontsize=12)
     plt.title("Diagram Payload vs. Range", fontsize=14)
-    plt.xlabel("x [km]", fontsize=12)
+    plt.xlabel("Range [km]", fontsize=12)
     plt.legend()
     plt.grid(True)
 
@@ -459,5 +462,89 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     return fig_payload_range
 
 
+def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_CRUISE=None):
+    logger = get_logger(log_name="Cruise")
 
+    c = (aircraft_parameters['TSFC'] / 3600)
 
+    altitude = flight_parameters['CRUISE_ALTITUDE']
+
+    if flight_parameters['CRUISE_VELOCITY'] == 0:
+
+        # Se for zero, quremos computar o valor
+        V_cru = calc_cruise_velocity(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)[
+            'CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
+
+    else:
+        V_cru = flight_parameters['CRUISE_VELOCITY']
+
+    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
+    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    OEW = aircraft_parameters['OEW']
+
+    TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
+    logger.debug(f"TOW: {TOW}")
+
+    W_1 = TOW - 0.15 * FW
+
+    sigma = aero.get_sigma(altitude=altitude)
+    S = aircraft_parameters['S']
+    K = aircraft_parameters['K']
+
+    E_m = aircraft_parameters['E_m']
+    CD0 = aircraft_parameters['CD0']
+
+    CL_cru = (2 * W_1) / (S * aero.rho_0 * sigma * V_cru ** 2)
+
+    CD_cru = CD0 + K * (CL_cru ** 2)
+    E_cru = CL_cru / CD_cru
+
+    departure_coods = {
+        "LATITUDE": flight_parameters['takeoff_parameters']['LATITUDE_TAKEOFF'],
+        "LONGITUDE": flight_parameters['takeoff_parameters']['LONGITUDE_TAKEOFF']
+    }
+
+    arrival_cords = {
+        "LATITUDE": flight_parameters['landing_parameters']['LATITUDE_LANDING'],
+        "LONGITUDE": flight_parameters['landing_parameters']['LONGITUDE_LANDING']
+    }
+
+    covered_distance_cruise = aero.get_haversine_distace(departure=departure_coods, arrival=arrival_cords)
+    logger.debug(f"covered_distance_cruise | covered_distance_cruise : {covered_distance_cruise / 1000}")
+
+    # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
+    # OJHA - 8.35
+    # x_h_V = ((2 * V_cru * E_m) / c) * math.atan(E_cru * zeta / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
+    x_h_V = covered_distance_cruise
+
+    # zeta = 2*E_m*math.tan(c*x_h_V/(2*E_m*V_cru))/(E_cru*(2*CL_cru*E_m*K*math.tan(c*x_h_V/(2*E_m*V_cru)) + 1))
+    zeta = (2 * E_m *
+            math.tan(c * x_h_V / (2 * E_m * V_cru)) /
+            (E_cru * (2 * CL_cru * E_m * K * math.tan(c * x_h_V / (2 * E_m * V_cru)) + 1))
+            )
+
+    logger.debug(f"calc_cruise_fuel_weight | zeta : {zeta}")
+    W_2 = W_1 * (1 - zeta)
+
+    delta_fuel = W_1 - W_2
+    percent_reduction = delta_fuel / W_1
+    logger.debug(f"calc_cruise_fuel_weight | percent_reduction : {percent_reduction * 100}")
+    logger.debug(f"calc_cruise_fuel_weight | needed fuel weight [ton] : {(delta_fuel / 9.81) / 1000}")
+
+    logger.debug(f"calc_cruise_fuel_weight | W_1 : {W_1}")
+    logger.debug(f"calc_cruise_fuel_weight | W_2 : {W_2}")
+    logger.debug(f"calc_cruise_fuel_weight | F_W : {FW}")
+
+    valid_fuel = delta_fuel > FW
+
+    if valid_fuel is True:
+        logger.debug(f"Quantidade insuficiente. calc_cruise_fuel_weight | W2: {W_2}\n delta:{delta_fuel}")
+    else:
+        logger.debug(f"Quantidade suficiente. calc_cruise_fuel_weight | W2: {W_2}\n delta:{delta_fuel}")
+
+    return {
+        "DELTA_FUEL": delta_fuel,
+        "ZETA": zeta,
+        "VALID_FUEL": valid_fuel
+    }
