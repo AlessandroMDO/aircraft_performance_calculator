@@ -125,8 +125,27 @@ class Aero:
         float: Stall velocity in meters per second.
         """
 
-        # TODO: qual altitude/densidade usar aqui para calcular a velocidade de stall?
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
 
         return V_S
+
+    @staticmethod
+    def get_haversine_distace(departure, arrival):
+
+        latitude_1 = departure['LATITUDE']
+        longitude_1 = departure['LONGITUDE']
+
+        latitude_2 = arrival['LATITUDE']
+        longitude_2 = arrival['LONGITUDE']
+
+        lat1, lon1, lat2, lon2 = map(math.radians, [latitude_1, longitude_1, latitude_2, longitude_2])
+
+        # Haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        radius_of_earth = 6_371_000  # Radius of Earth in meters
+        distance = radius_of_earth * c
+        return distance
 
