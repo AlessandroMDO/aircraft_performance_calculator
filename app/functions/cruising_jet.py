@@ -373,12 +373,13 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
 
-    MFW = aircraft_parameters['FUEL_WEIGHT']  # max fuel weight
-    NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
-    FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
-    CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
+    MFW = aircraft_parameters['MAXIMUM_FUEL_WEIGHT']  # max fuel weight
+
+    # NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
+    # CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
     OEW = aircraft_parameters['OEW']
     MTOW = aircraft_parameters['MTOW']
+    MPW = aircraft_parameters['MAXIMUM_PAYLOAD_WEIGHT']
     logger.debug(f"calc_payload_x_range | MTOW : {MTOW}")
 
     E_m = aircraft_parameters['E_m']
@@ -387,38 +388,38 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
 
         range_list = []
 
-        for V_i in linspace(V_cru - 50, V_cru + 50, 20):
-            for h_i in linspace(h_cru - 2000, h_cru + 2000, 10):
-                rho_i = aero.get_density(altitude=h_i)
-                CL_i = (2 * W) / (S * rho_i * V_i ** 2)
-                CD_i = CD0 + K * CL_i ** 2
-                E_i = CL_i / CD_i
+        V_i = V_cru
 
-                # -----------------------------------------------------------------------------------------------------------------#
-                # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
+        # for V_i in linspace(V_cru - 50, V_cru + 50, 20):
 
-                x_h_V = (2 * V_i * E_i / n) * math.atan((E_i * zeta) / (2 * E_m * (1 - K * E_i * CL_i * zeta)))
+        rho_i = aero.get_density(altitude=h_cru)
+        CL_i = (2 * W) / (S * rho_i * V_i ** 2)
+        CD_i = CD0 + K * CL_i ** 2
+        E_i = CL_i / CD_i
 
-                range_list.append(x_h_V)
+        # -----------------------------------------------------------------------------------------------------------------#
+        # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
+
+        x_h_V = (2 * V_i * E_i / n) * math.atan((E_i * zeta) / (2 * E_m * (1 - K * E_i * CL_i * zeta)))
+
+        range_list.append(x_h_V)
 
         return max(range_list)
 
-    y_A = float(
-        NP * aero.person_weight + CW) / aero.g  # condição de máxima carga paga, porém sem combustível (alcance zero)
-    y_B = float(NP * aero.person_weight + CW) / aero.g  # MTOW
-    y_C = max((MTOW - OEW - MFW) / aero.g, 0)  # Aumenta o combustível, porém reduz carga paga
-    logger.debug(f"calc_payload_x_range | y_C : {y_C}")
-    y_D = 0  # Zero carga paga
-
-    zeta_B = (MTOW - OEW - MFW) / MTOW
-    logger.debug(f"calc_payload_x_range | zeta_B : {zeta_B}")
-    zeta_C = MFW / MTOW
-    logger.debug(f"calc_payload_x_range | zeta_C : {zeta_C}")
-    zeta_D = MFW / (MFW + OEW)
-    logger.debug(f"calc_payload_x_range | zeta_D : {zeta_D}")
-
-    # Alcance nos pontos principais:
+    y_A = MPW / aero.g  # condição de máxima carga paga, porém sem combustível (alcance zero)
     x_A = 0
+
+    y_B = MPW / aero.g  # MTOW
+    zeta_B = (MTOW - OEW - MPW) / MTOW
+
+    y_C = max((MTOW - OEW - MFW) / aero.g, 0)  # Aumenta o combustível, porém reduz carga paga
+    zeta_C = MFW / MTOW
+
+    y_D = 0  # Zero carga paga
+    zeta_D = MFW / (MFW + OEW)
+
+
+
     x_B = range_iter(zeta=zeta_B, W=MTOW)
     x_C = range_iter(zeta=zeta_C, W=MTOW)
     x_D = range_iter(zeta=zeta_D, W=OEW + MFW)
@@ -510,7 +511,7 @@ def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, 
         "LONGITUDE": flight_parameters['landing_parameters']['LONGITUDE_LANDING']
     }
 
-    covered_distance_cruise = aero.get_haversine_distace(departure=departure_coods, arrival=arrival_cords)
+    covered_distance_cruise = aero.get_haversine_distance(departure=departure_coods, arrival=arrival_cords)
     logger.debug(f"covered_distance_cruise | covered_distance_cruise : {covered_distance_cruise / 1000}")
 
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight

@@ -130,7 +130,7 @@ class Aero:
         return V_S
 
     @staticmethod
-    def get_haversine_distace(departure, arrival):
+    def get_haversine_distance(departure, arrival):
 
         latitude_1 = departure['LATITUDE']
         longitude_1 = departure['LONGITUDE']

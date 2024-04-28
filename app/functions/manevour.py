@@ -28,7 +28,7 @@ def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW)
     # TOW - (50% do combustível)
-    W = TOW - 0.5 * FW if W_CRUISE is None else W_CRUISE
+    W = (TOW - 0.5 * FW) if W_CRUISE is None else W_CRUISE
 
     E_m = aircraft_parameters['E_m']
 
