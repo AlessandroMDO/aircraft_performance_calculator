@@ -12,7 +12,7 @@ from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
 from functions.aero import Aero
-from functions.plot_geo import get_map
+from functions.plot_geo_2 import get_map
 from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 from db.utils.db_utils import *
 from guis.ui_new_airport_table import InputTableWindow
@@ -789,13 +789,13 @@ class GUI_FLIGHT_CONDITIONS(QMainWindow):
     def invoke_map(self):
 
         latitude_takeoff = self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LATITUDE']
-        lontitude_takeoff = self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE']
+        longitude_takeoff = self.airport_takeoff_parameters['AIRPORT_TAKEOFF_LONGITUDE']
         latitude_landing = self.airport_landing_parameters['AIRPORT_LANDING_LATITUDE']
         longitude_landing = self.airport_landing_parameters['AIRPORT_LANDING_LONGITUDE']
         airport_takeoff = self.airport_takeoff_parameters['AIRPORT_NAME']
         airport_landing = self.airport_landing_parameters['AIRPORT_NAME']
 
-        fig = get_map(latitude_takeoff, lontitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing)
+        fig = get_map(latitude_takeoff, longitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing)
         fig.show()
 
     def handle_airport_list_landing_change(self):
