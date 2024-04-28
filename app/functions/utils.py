@@ -2,7 +2,6 @@ from functools import wraps
 import logging
 from logging.config import dictConfig
 from functools import lru_cache
-from frozendict import frozendict
 
 
 def deep_freeze(thing):
@@ -56,13 +55,11 @@ def hash_dict(func):
         return func(*args, **kwargs)
     return wrapped
 
-
-@lru_cache()
-def get_logger():
+def get_logger(log_name=""):
     logging_config = dict(
         version=1,
         formatters={
-            'f': {'format': '%(asctime)s | %(name)-4s | %(levelname)-4s | %(message)s'}},
+            'f': {'format': f'%(asctime)s | %(name)-4s | %(levelname)-4s | {log_name} |%(message)s'}},
         handlers={
             'h': {'class': 'logging.StreamHandler',
                   'formatter': 'f',
@@ -79,3 +76,24 @@ def get_logger():
     logger = logging.getLogger()
 
     return logger
+
+
+def default_graph_colors():
+
+    colors = {
+        "blue": "#1D3D7B",
+        "black": "#000000",
+        "red":  "#E63946",
+        "medium_blue": "#457B9D",
+        "light_blue": "#A8DADC",
+        "light_white": "F1FAEE",
+        "green": "#43aa8b",
+        "dark_green": "#1b4332"
+    }
+
+    return colors
+def linspace(a, b, n=100):
+    if n < 2:
+        return b
+    diff = (float(b) - a)/(n - 1)
+    return [diff * i + a  for i in range(n)]

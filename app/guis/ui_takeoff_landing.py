@@ -9,12 +9,10 @@ from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from PySide2 import QtWidgets
-from functions.utils import get_logger
-from db.utils.db_utils import *
-from functions.aero import Aero
-from functions.landing import total_landing_distance, total_landing_time
-from functions.takeoff import total_takeoff_distance, total_takeoff_time
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from app.functions.utils import get_logger
+from app.functions.aero import Aero
+from app.functions.takeoff import calc_total_takeoff_distance
+from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 
 
 
@@ -131,15 +129,6 @@ class GUI_DECOLAGEM(QMainWindow):
         self.background.setAlignment(Qt.AlignCenter)
         self.background.setIndent(0)
         self.background.setText("")
-
-        # --------------------------------------------------------------------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-
-        self.run_analysis_button = QPushButton(self.centralwidget)
-        self.run_analysis_button.setText("")  # Set an empty text to hide the label
-        self.run_analysis_button.setGeometry(QRect(315, 541, 168, 33))
-        self.run_analysis_button.setStyleSheet("border: none; background: none;")  # Hide border and background
-        self.run_analysis_button.clicked.connect(self.invoke_run_analysis)
 
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
@@ -628,49 +617,6 @@ class GUI_DECOLAGEM(QMainWindow):
     # -----------------------------------------------------------------------------------------------------------------#
     # -----------------------------------------------------------------------------------------------------------------#
     # -----------------------------------------------------------------------------------------------------------------#
-
-    def invoke_run_analysis(self):
-
-        # Guardando os parametros do aeroporto takeoff na variavel self.airport_takeoff_parameters
-        self.calculate_takeoff_airport_parameters()
-        self.logger.debug(f"Airport Takeoff Parameters: {self.airport_takeoff_parameters}")
-
-        # Guardando os parametros do aeroporto landing na variavel self.airport_landing_parameters
-        self.calculate_landing_airport_parameters()
-        self.logger.debug(f"Airport Landing Parameters: {self.airport_landing_parameters}")
-
-        # Guardando o atrito da pista decolagem self.runway_condition_takeoff_mu
-        self.calculate_runway_takeoff_condition_parameter()
-        self.logger.debug(f"Runway Condition Takeoff Mu: {self.runway_condition_takeoff_mu}")
-
-        # Guardando o atrito da pista pouso self.runway_condition_landing_mu
-        self.calculate_runway_landing_condition_parameter()
-        self.logger.debug(f"Runway Condition Landing Mu: {self.runway_condition_landing_mu}")
-
-        self.aircraft_parameters = self.aircraft_parameters_class.get_aircraft_parameters()
-
-        self.takeoff_parameters = {
-            "STALL_VELOCITY": self.aero.calculate_stall_velocity(
-                W=self.aircraft_parameters['MTOW'],
-                S=self.aircraft_parameters['SURFACE_AREA'],
-                CL_max=self.aircraft_parameters['CL_MAX'],
-                rho=self.airport_takeoff_parameters['AIRPORT_TAKEOFF_DENSITY']),
-            "ALTITUDE_TAKEOFF": self.airport_takeoff_parameters['AIRPORT_TAKEOFF_ELEVATION'],
-            "MU_TAKEOFF": self.runway_condition_takeoff_mu,
-            "RUNWAY_SLOPE_TAKEOFF": self.runway_slope_takeoff_value,
-            "RUNWAY_TEMPERATURE_TAKEOFF": self.runway_temperature_takeoff_value,
-            "WIND_VELOCITY_TAKEOFF": self.wind_velocity_takeoff_value,
-            "T": 200,
-            "D": 100
-        }
-
-        self.logger.debug(f"Takeoff Parameters: {self.takeoff_parameters}")
-
-        self.takeoff_distance = total_takeoff_distance(takeoff_parameters=self.takeoff_parameters, aircraft_parameters=self.aircraft_parameters, show=True)
-        # self.takeoff_time = total_takeoff_time(takeoff_parameters=self.takeoff_parameters, aircraft_parameters=self.aircraft_parameters, show=True)
-
-
-
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

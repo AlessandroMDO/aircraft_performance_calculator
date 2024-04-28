@@ -5,6 +5,8 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 import math
+from .utils import get_logger
+
 
 
 class Aero:
@@ -19,7 +21,8 @@ class Aero:
         self.medium_breaking_constant = 0.35 * 9.81
         self.minimum_breaking_constant = 0.15 * 9.81
         self.gamma_Ap = math.radians(3)
-        self.person_weight = 75  # [kg]
+        self.person_weight = 75 * 9.81  # [kg]
+        self.logger = get_logger()
 
     def calculate_general_drag_coefficient(self, K, CD0, S=None, altitude=None, V=None, W=None, CL=None):
         """
@@ -61,14 +64,14 @@ class Aero:
         return t1, p1
 
     #https://gist.github.com/buzzerrookie/5b6438c603eabf13d07e
-    def get_density(self, altitude, temp=None):
+    def get_density(self, altitude, get_temp=None):
         a = [-0.0065, 0, 0.001, 0.0028]
         h = [11000, 20000, 32000, 47000]
         p0 = 101325
         t0 = 288.15
         prevh = 0
         if altitude < 0 or altitude > 47000:
-            print("altitude must be in [0, 47000]")
+            self.logger.error("altitude must be in [0, 47000]")
             return
         for i in range(0, 4):
             if altitude <= h[i]:
@@ -79,7 +82,11 @@ class Aero:
                 prevh = h[i]
 
         density = pressure / (self.R_gas * temperature)
-        return density
+
+        if get_temp is None:
+            return density
+        else:
+            return density, temperature
 
 
     def get_sigma(self, altitude: float) -> float:
@@ -94,10 +101,14 @@ class Aero:
         float: Razão de densidade do ar não-dimensional (sigma).
         """
 
-        rho = self.get_density(altitude=altitude)
-        sigma = float(rho / self.rho_0)
+        try:
+            rho = self.get_density(altitude=altitude)
+            sigma = float(rho / self.rho_0)
+            return sigma
+        except TypeError as error:
+            self.logger.error("Error while getting sigma value.")
 
-        return sigma
+
 
     def calculate_stall_velocity(self, W, rho, CL_max, S):
 
@@ -117,4 +128,24 @@ class Aero:
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
 
         return V_S
+
+    @staticmethod
+    def get_haversine_distance(departure, arrival):
+
+        latitude_1 = departure['LATITUDE']
+        longitude_1 = departure['LONGITUDE']
+
+        latitude_2 = arrival['LATITUDE']
+        longitude_2 = arrival['LONGITUDE']
+
+        lat1, lon1, lat2, lon2 = map(math.radians, [latitude_1, longitude_1, latitude_2, longitude_2])
+
+        # Haversine formula
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+        a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        radius_of_earth = 6_371_000  # Radius of Earth in meters
+        distance = radius_of_earth * c
+        return distance
 

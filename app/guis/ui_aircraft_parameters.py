@@ -1,30 +1,27 @@
-import os
 import sys
-
-current_dir = os.path.dirname(os.path.realpath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
 
 from PySide2.QtCore import *
 from PySide2.QtGui import *
 from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
-from db.utils.db_utils import *
 from functions.aero import Aero
-from PySide2.QtWidgets import QApplication, QMainWindow, QAction, QStackedWidget, QHBoxLayout, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
+from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QTextEdit
+from db.utils.db_utils import *
+import math
 
-#TODO: implementar botao para deletar uma aeronave da base
+
 class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
     def __init__(self, background_path="guis/AIRCRAFT_PARAMETERS_800_800.png"):
 
         super(GUI_AIRCRAFT_PARAMETERS, self).__init__()
 
-        self.tsfc_value = None
-        self.oew_value = None
-        self.ne_value = None
-        self.e_value = None
+        self.maximum_payload_weight_value = None
+        self.tsfc_value = 1
+        self.oew_value = 300
+        self.ne_value = 2
+        self.e_value = 0.8
         self.aero = Aero()
 
         self.k = None
@@ -43,8 +40,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name = None
         self.background_path = background_path
 
-        # self.aircrafts = execute_generic_query(db_path=r"../../db/utils/aero.db", query="select nome_aeronave, id from Airplanes;", first_value=False)
-        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+        # _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db", query="select * from Airplanes;", first_value=False)
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db",
+                                                             query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;", first_value=False)
 
         self.runway_temperature_takeoff_value = 0
         self.runway_temperature_takeoff = None
@@ -79,17 +77,17 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.centralwidget = QWidget(Aircraft_Parameters)
         self.centralwidget.setObjectName(u"centralwidget")
 
-        # palette = QPalette()
-        # brush = QBrush(QColor(255, 255, 255, 255))
-        # brush.setStyle(Qt.SolidPattern)
-        # palette.setBrush(QPalette.Active, QPalette.Base, brush)
-        # brush1 = QBrush(QColor(188, 188, 188, 255))
-        # brush1.setStyle(Qt.SolidPattern)
-        # palette.setBrush(QPalette.Active, QPalette.Window, brush1)
-        # palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        # palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
-        # palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
-        # palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
+        palette = QPalette()
+        brush = QBrush(QColor(255, 255, 255, 255))
+        brush.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Base, brush)
+        brush1 = QBrush(QColor(188, 188, 188, 255))
+        brush1.setStyle(Qt.SolidPattern)
+        palette.setBrush(QPalette.Active, QPalette.Window, brush1)
+        palette.setBrush(QPalette.Inactive, QPalette.Base, brush)
+        palette.setBrush(QPalette.Inactive, QPalette.Window, brush1)
+        palette.setBrush(QPalette.Disabled, QPalette.Base, brush1)
+        palette.setBrush(QPalette.Disabled, QPalette.Window, brush1)
 
         font = QFont()
         font.setPointSize(10)
@@ -139,7 +137,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.aircraft_list_db.setFont(font)
         self.aircraft_list_db.setLayoutDirection(Qt.LeftToRight)
         self.aircraft_list_db.setEditable(False)
-        # self.aircraft_list_db.setPalette(palette)
+        self.aircraft_list_db.setPalette(palette)
 
         count_aircrafts = 0
         for aircraft in self.aircrafts_parameters.keys():
@@ -148,8 +146,8 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
                                               QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
             count_aircrafts += 1
 
-        self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
 
+        self.aircraft_list_db.currentIndexChanged.connect(self.handle_aircraft_db_change)
         self.aircraft_list_db.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Select aircraft already created.", None))
 
         # --------------------------------------------------------------------------------------------------------------#
@@ -176,7 +174,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.cl_max = QTextEdit(self.centralwidget)
         self.cl_max.setObjectName(u"cl_max")
-        self.cl_max.setGeometry(QRect(251, 237.11, 112, 25.06))
+        self.cl_max.setGeometry(QRect(251, 238.11, 112, 25.06))
         self.cl_max.setFont(font)
         self.cl_max.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.cl_max.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -195,7 +193,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.cd0 = QTextEdit(self.centralwidget)
         self.cd0.setObjectName(u"cd0")
-        self.cd0.setGeometry(QRect(251, 278.55, 112, 25.06))
+        self.cd0.setGeometry(QRect(251, 279, 112, 25.06))
         self.cd0.setFont(font)
         self.cd0.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.cd0.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -209,31 +207,12 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.cd0.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['cd0']))
 
         # --------------------------------------------------------------------------------------------------------------#
-        # ----------------------------------------------- K TEXT BOX ---------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-
-        # self.k = QTextEdit(self.centralwidget)
-        # self.k.setObjectName(u"k")
-        # self.k.setGeometry(QRect(251, 225, 112, 20))
-        # self.k.setFont(font)
-        # self.k.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
-        # self.k.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.k.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        # self.k.setLineWrapMode(QTextEdit.FixedColumnWidth)
-        # self.k.setLineWrapColumnOrWidth(500000)
-        # self.k.setTabStopWidth(80)
-        # self.k.setAcceptRichText(True)
-        # self.k.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"K = 1/(pi * aspect_ratio * Oswald efficiency)", None))
-        # self.k.textChanged.connect(self.handle_k_value)
-        # self.k.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['k']))
-
-        # --------------------------------------------------------------------------------------------------------------#
         # ------------------------------------------- OSWALD NUMBER BOX ------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
         self.e = QTextEdit(self.centralwidget)
         self.e.setObjectName(u"e")
-        self.e.setGeometry(QRect(251, 319.04, 112, 25.06))
+        self.e.setGeometry(QRect(251, 320, 112, 25.06))
         self.e.setFont(font)
         self.e.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.e.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -242,17 +221,18 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.e.setLineWrapColumnOrWidth(500000)
         self.e.setTabStopWidth(80)
         self.e.setAcceptRichText(True)
+        self.e.setText(str(self.e_value))
         self.e.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Oswald efficiency)", None))
         self.e.textChanged.connect(self.handle_e_value)
         self.e.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['e']))
 
         # --------------------------------------------------------------------------------------------------------------#
-        # ------------------------------------------- OEW NUMBER BOX ------------------------------------------------#
+        # ------------------------------------------- OEW NUMBER BOX ---------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
         self.oew = QTextEdit(self.centralwidget)
         self.oew.setObjectName(u"oew")
-        self.oew.setGeometry(QRect(251, 361.45, 112, 25.06))
+        self.oew.setGeometry(QRect(251, 361, 112, 25.06))
         self.oew.setFont(font)
         self.oew.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.oew.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -261,9 +241,30 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.oew.setLineWrapColumnOrWidth(500000)
         self.oew.setTabStopWidth(80)
         self.oew.setAcceptRichText(True)
+        self.oew.setText(str(self.oew_value))
         self.oew.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Operational Empty Weight)", None))
         self.oew.textChanged.connect(self.handle_oew_value)
         self.oew.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['oew']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # --------------------------------------------- MTOW BOX -------------------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.mtow = QTextEdit(self.centralwidget)
+        self.mtow.setObjectName(u"mtow")
+        self.mtow.setGeometry(QRect(251, 402, 112, 25.06))
+        self.mtow.setFont(font)
+        self.mtow.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.mtow.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.mtow.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.mtow.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.mtow.setLineWrapColumnOrWidth(500000)
+        self.mtow.setTabStopWidth(80)
+        self.mtow.setAcceptRichText(True)
+        self.mtow.setText(str(self.oew_value))
+        self.mtow.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Maximum Takeoff Weight", None))
+        self.mtow.textChanged.connect(self.handle_mtow_value)
+        self.mtow.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['mtow']))
 
         # --------------------------------------------------------------------------------------------------------------#
         # ------------------------------------------- WINGSPAN NUMBER BOX ------------------------------------------------#
@@ -271,7 +272,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.b = QTextEdit(self.centralwidget)
         self.b.setObjectName(u"b")
-        self.b.setGeometry(QRect(251, 402.89, 112, 25.06))
+        self.b.setGeometry(QRect(251, 444, 112, 25.06))
         self.b.setFont(font)
         self.b.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.b.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -290,7 +291,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.tsfc = QTextEdit(self.centralwidget)
         self.tsfc.setObjectName(u"tsfc")
-        self.tsfc.setGeometry(QRect(251, 485.78, 112, 25.06))
+        self.tsfc.setGeometry(QRect(251, 527, 112, 25.06))
         self.tsfc.setFont(font)
         self.tsfc.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.tsfc.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -309,7 +310,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.t0 = QTextEdit(self.centralwidget)
         self.t0.setObjectName(u"t0")
-        self.t0.setGeometry(QRect(251, 527, 112, 25.06))
+        self.t0.setGeometry(QRect(251, 568, 112, 25.06))
         self.t0.setFont(font)
         self.t0.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.t0.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -328,7 +329,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.ne = QTextEdit(self.centralwidget)
         self.ne.setObjectName(u"ne")
-        self.ne.setGeometry(QRect(251, 567, 112, 25.06))
+        self.ne.setGeometry(QRect(251, 609, 112, 25.06))
         self.ne.setFont(font)
         self.ne.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.ne.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -347,7 +348,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.wing_area = QTextEdit(self.centralwidget)
         self.wing_area.setObjectName(u"wing_area")
-        self.wing_area.setGeometry(QRect(251, 444.34, 112, 25.06))
+        self.wing_area.setGeometry(QRect(251, 485, 112, 25.06))
         self.wing_area.setFont(font)
         self.wing_area.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
         self.wing_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -361,13 +362,66 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['area']))
 
         # --------------------------------------------------------------------------------------------------------------#
+        # ---------------------------------------- FUEL CAPACITY TEXT BOX ----------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.fuel_weight = QTextEdit(self.centralwidget)
+        self.fuel_weight.setObjectName(u"fuel_weight")
+        self.fuel_weight.setGeometry(QRect(251, 650, 112, 25.06))
+        self.fuel_weight.setFont(font)
+        self.fuel_weight.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.fuel_weight.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fuel_weight.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.fuel_weight.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.fuel_weight.setLineWrapColumnOrWidth(500000)
+        self.fuel_weight.setTabStopWidth(80)
+        self.fuel_weight.setAcceptRichText(True)
+        self.fuel_weight.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Type the fuel capacity of the aircraft.", None))
+        self.fuel_weight.textChanged.connect(self.handle_fuel_capacity_value)
+        self.fuel_weight.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['fuel_weight']))
+
+        # --------------------------------------------------------------------------------------------------------------#
+        # ---------------------------------------- FUEL CAPACITY TEXT BOX ----------------------------------------------#
+        # --------------------------------------------------------------------------------------------------------------#
+
+        self.maximum_payload_weight = QTextEdit(self.centralwidget)
+        self.maximum_payload_weight.setObjectName(u"maximum_payload_weight")
+        self.maximum_payload_weight.setGeometry(QRect(251, 691, 112, 25.06))
+        self.maximum_payload_weight.setFont(font)
+        self.maximum_payload_weight.setInputMethodHints(Qt.ImhFormattedNumbersOnly)
+        self.maximum_payload_weight.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.maximum_payload_weight.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.maximum_payload_weight.setLineWrapMode(QTextEdit.FixedColumnWidth)
+        self.maximum_payload_weight.setLineWrapColumnOrWidth(500000)
+        self.maximum_payload_weight.setTabStopWidth(80)
+        self.maximum_payload_weight.setAcceptRichText(True)
+        self.maximum_payload_weight.setToolTip(QCoreApplication.translate("Aircraft_Parameters", u"Type the maximum payload of the aircraft.", None))
+        self.maximum_payload_weight.textChanged.connect(self.handle_maximum_payload_weight_value)
+        self.maximum_payload_weight.setText(str(self.aircrafts_parameters[self.aircraft_list_db.currentText()]['maximum_payload_weight']))
+
+
+
+
+        # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
         self.create_db_button = QPushButton(self.centralwidget)
         self.create_db_button.setText("")  # Set an empty text to hide the label
-        self.create_db_button.setGeometry(QRect(107, 738, 169, 39))
+        self.create_db_button.setGeometry(QRect(107, 738, 169, 42))
         self.create_db_button.setStyleSheet("border: none; background: none;")
         self.create_db_button.clicked.connect(self.save_current_aicraft_to_db)
+
+        self.update_db_button = QPushButton(self.centralwidget)
+        self.update_db_button.setText("")  # Set an empty text to hide the label
+        self.update_db_button.setGeometry(QRect(325, 738, 169, 42))
+        self.update_db_button.setStyleSheet("border: none; background: none;")
+        self.update_db_button.clicked.connect(self.update_current_aicraft_to_db)
+
+        self.delete_aircraft_db_button = QPushButton(self.centralwidget)
+        self.delete_aircraft_db_button.setText("")  # Set an empty text to hide the label
+        self.delete_aircraft_db_button.setGeometry(QRect(543, 738, 169, 42))
+        self.delete_aircraft_db_button.setStyleSheet("border: none; background: none;")
+        self.delete_aircraft_db_button.clicked.connect(self.delete_current_aicraft_from_db)
 
         # --------------------------------------------------------------------------------------------------------------#
         Aircraft_Parameters.setCentralWidget(self.centralwidget)
@@ -376,9 +430,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name.raise_()
         self.cl_max.raise_()
         self.cd0.raise_()
-        # self.k.raise_()
         self.e.raise_()
         self.oew.raise_()
+        self.mtow.raise_()
         self.b.raise_()
         self.tsfc.raise_()
         self.t0.raise_()
@@ -386,14 +440,16 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.wing_area.raise_()
         self.aircraft_list_db.raise_()
         self.create_db_button.raise_()
+        self.delete_aircraft_db_button.raise_()
+        self.update_db_button.raise_()
+        self.fuel_weight.raise_()
+        self.maximum_payload_weight.raise_()
 
         self.statusbar = QStatusBar(Aircraft_Parameters)
         self.statusbar.setObjectName(u"statusbar")
 
         Aircraft_Parameters.setStatusBar(self.statusbar)
-
         QMetaObject.connectSlotsByName(Aircraft_Parameters)
-
         Aircraft_Parameters.setWindowTitle(QCoreApplication.translate("Aircraft_Parameters", u"Aircraft_Parameters", None))
 
     def handle_aircraft_name_value(self):
@@ -492,6 +548,63 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
         self.logger.debug(f"oew value: {self.oew_value}")
 
+    def handle_fuel_capacity_value(self):
+
+        text_fuel_weight = self.fuel_weight.toPlainText()
+
+        if not text_fuel_weight:
+            self.fuel_weight.setPlainText("0")
+        else:
+            try:
+                fuel_weight = float(text_fuel_weight)
+                if 0 <= fuel_weight < 1000000:
+                    self.fuel_weight_value = fuel_weight
+                else:
+                    self.fuel_weight.clear()
+            except ValueError:
+                self.fuel_weight.clear()
+
+        self.logger.debug(f"fuel_weight value: {self.fuel_weight_value}")
+
+
+    def handle_maximum_payload_weight_value(self):
+
+        maximum_payload_weight = self.maximum_payload_weight.toPlainText()
+
+        if not maximum_payload_weight:
+            self.fuel_weight.setPlainText("0")
+        else:
+            try:
+                payload_weight = float(maximum_payload_weight)
+                if 0 <= payload_weight < 1000000:
+                    self.maximum_payload_weight_value = payload_weight
+                else:
+                    self.maximum_payload_weight.clear()
+            except ValueError:
+                self.maximum_payload_weight.clear()
+
+        self.logger.debug(f"maximum_payload_weight_value: {self.maximum_payload_weight_value}")
+
+
+
+    def handle_mtow_value(self):
+
+        text_mtow = self.mtow.toPlainText()
+
+        if not text_mtow:
+            self.mtow.setPlainText("0")
+        else:
+            try:
+                mtow = float(text_mtow)
+                if 0 <= mtow < 1000000:
+                    self.mtow_value = mtow
+                else:
+                    self.mtow.clear()
+            except ValueError:
+                self.mtow.clear()
+
+        self.logger.debug(f"mtow value: {self.mtow_value}")
+
     def handle_b_value(self):
 
         text_b = self.b.toPlainText()
@@ -519,7 +632,7 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         else:
             try:
                 tsfc = float(text_tsfc)
-                if 0 <= tsfc < 10:
+                if 0 <= tsfc < 10000:
                     self.tsfc_value = tsfc
                 else:
                     self.tsfc.clear()
@@ -586,24 +699,33 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.current_aircraft_db = self.aircraft_list_db.currentText()
 
         self.new_aircraft_name.setPlainText(self.current_aircraft_db)
-        self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cd0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cd0']))
+        self.wing_area.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['area']))
         self.cl_max.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['cl_max']))
         self.e.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['e']))
-        self.oew.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['oew']))
+        self.oew.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['oew'] / 1, 3)))
+        self.mtow.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['mtow'] / 1, 3)))
+        self.fuel_weight.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['fuel_weight'] / 1, 3)))
+        self.maximum_payload_weight.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['maximum_payload_weight'] / 1, 3)))
         self.b.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['b']))
         self.tsfc.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['tsfc']))
-        self.t0.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['t0']))
+        self.t0.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['t0'] / 1, 3)))
         self.ne.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['ne']))
 
         self.logger.debug(f"Current Aircraft DB: {self.current_aircraft_db}")
 
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
-    def get_aircraft_parameters(self):
+    def get_aircraft_parameters(self, convert_units=False):
+
+        K = 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value))
+        CD0 = self.cd0_value
 
         result = {
             'AIRCRAFT_NAME': self.text_aircraft_name,
-            'OEW': self.oew_value * 1000,
+            'OEW': self.oew_value * 1000 if convert_units is False else self.oew_value * 1000 * self.aero.g,
+            'MTOW': self.mtow_value * 1000 if convert_units is False else self.mtow_value * 1000 * self.aero.g,
+            'MAXIMUM_FUEL_WEIGHT': self.fuel_weight_value * 1000 if convert_units is False else self.fuel_weight_value * 1000 * self.aero.g,
+            'MAXIMUM_PAYLOAD_WEIGHT': self.maximum_payload_weight_value * 1000 if convert_units is False else self.maximum_payload_weight_value * 1000 * self.aero.g,
             'b': self.b_value,
             'e': self.e_value,
             'AR': (self.b_value ** 2) / self.wing_area_value,
@@ -612,21 +734,35 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             'NE': self.ne_value,
             'CL_MAX': self.cl_max_value,
             'S': self.wing_area_value,
-            'K': 1 / (3.14 * self.e_value * ((self.b_value ** 2) / self.wing_area_value)),
-            'CD0': self.cd0_value
+            'K': K,
+            'CD0': CD0,
+            'E_m': 1 / (2 * math.sqrt(K * CD0)),
         }
 
         self.logger.debug(f"Current aircraft parameters: {result}")
 
         return result
 
-    def warning_box(self, message):
+
+    def warning_box(self, message, ok_and_decline=False):
 
         msg_box = QMessageBox()
         msg_box.setIcon(QMessageBox.Warning)
         msg_box.setText(message)
         msg_box.setWindowTitle('Warning')
-        msg_box.exec_()
+
+        if ok_and_decline is False:
+            msg_box.exec_()
+        else:
+            ok_button = QPushButton('Yes')
+            msg_box.addButton(ok_button, QMessageBox.AcceptRole)
+
+            decline_button = QPushButton('No')
+            msg_box.addButton(decline_button, QMessageBox.RejectRole)
+            result = msg_box.exec_()
+
+            return result
+
 
     def success_box(self, message):
         msg_box = QMessageBox()
@@ -635,10 +771,33 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         msg_box.setWindowTitle('Success')
         msg_box.exec_()
 
+    def delete_current_aicraft_from_db(self):
+
+        result = self.get_aircraft_parameters()
+        aircraft_name = result['AIRCRAFT_NAME']
+
+        if aircraft_name is not None:
+            result = self.warning_box(message=f"Are you sure you want to delete '{aircraft_name}' from the database ?\nThis action can't be undone.", ok_and_decline=True)
+            if result == 0:
+                delete_query = f"delete from airplanes where nome_aeronave = '{aircraft_name}'"
+                delete_db_query(db_path=r"./db/aero.db", query=delete_query)
+
+                _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;", first_value=False)
+
+                self.aircraft_list_db.clear()
+
+                count_aircrafts = 0
+                for aircraft in self.aircrafts_parameters.keys():
+                    self.aircraft_list_db.addItem("")
+                    self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+                    count_aircrafts += 1
+
 
     def save_current_aicraft_to_db(self):
 
         result = self.get_aircraft_parameters()
+        _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;",
+                                                             first_value=False)
 
         if result['AIRCRAFT_NAME'] in self.aircrafts_parameters.keys():
             self.warning_box(message='Aircraft already in the database. Give it another name.')
@@ -650,13 +809,13 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
 
             insert_query = f""" 
             INSERT INTO airplanes 
-            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne) 
+            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow, fuel_weight, maximum_payload_weight) 
             VALUES (
-                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW'] / 1000}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0'] / 1000}, {result['NE']}) ;
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}, {result['MAXIMUM_FUEL_WEIGHT']}, {result['MAXIMUM_PAYLOAD_WEIGHT']}) ;
             """
 
-            insert_data_to_db(db_path=r"./db/utils/aero.db", query=insert_query)
-            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/utils/aero.db", query="select * from Airplanes;", first_value=False)
+            insert_data_to_db(db_path=r"./db/aero.db", query=insert_query)
+            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;", first_value=False)
 
             self.aircraft_list_db.clear()
 
@@ -667,6 +826,40 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
                 count_aircrafts += 1
 
             self.success_box(message='Aircraft successfully created!')
+
+    def update_current_aicraft_to_db(self):
+
+        result = self.get_aircraft_parameters()
+        aircraft_name = result['AIRCRAFT_NAME']
+
+        result_message = self.warning_box(
+            message=f"Are you sure you want to update the values of the '{aircraft_name}'? The current values will replace the old ones.",
+            ok_and_decline=True)
+        if result_message == 0:
+            # Primeiro deletamos, dps inserimos novamente a aeronave
+            delete_query = f"delete from airplanes where nome_aeronave = '{aircraft_name}'"
+            delete_db_query(db_path=r"./db/aero.db", query=delete_query)
+
+
+            insert_query = f""" 
+            INSERT INTO airplanes 
+            (nome_aeronave, cd0, area, cl_max, oew, tsfc, b, e, t0, ne, mtow, fuel_weight, maximum_payload_weight) 
+            VALUES (
+                '{result['AIRCRAFT_NAME']}', {result['CD0']}, {result['S']}, {result['CL_MAX']}, {result['OEW']}, {result['TSFC']}, {result['b']}, {result['e']}, {result['T0']}, {result['NE']}, {result['MTOW']}, {result['MAXIMUM_FUEL_WEIGHT']}, {result['MAXIMUM_PAYLOAD_WEIGHT']}) ;
+            """
+
+            insert_data_to_db(db_path=r"./db/aero.db", query=insert_query)
+            _, self.aircrafts_parameters = execute_generic_query(db_path=r"./db/aero.db", query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;", first_value=False)
+
+            self.aircraft_list_db.clear()
+
+            count_aircrafts = 0
+            for aircraft in self.aircrafts_parameters.keys():
+                self.aircraft_list_db.addItem("")
+                self.aircraft_list_db.setItemText(count_aircrafts, QCoreApplication.translate("Aircraft_Parameters", f"{aircraft}", None))
+                count_aircrafts += 1
+
+            self.success_box(message='Aircraft successfully updated!')
 
 
 if __name__ == "__main__":
