@@ -79,12 +79,18 @@ class MainWindow(QMainWindow):
         CW = flight_parameters['DISPATCHED_CARGO_WEIGHT']
         OEW = aircraft_parameters['OEW']
         MTOW = aircraft_parameters['MTOW']
+        MPW = aircraft_parameters['MAXIMUM_PAYLOAD_WEIGHT']
 
         TOW = float(NP * aero.person_weight + OEW + FW + CW)
+        PW = float(NP * aero.person_weight + CW) #payload weight
 
         if TOW > MTOW:
             perc = round(TOW/MTOW, 2)
             self.warning_box(f"The current weight conguration exceeds MTOW by {perc}%.\nThe results may be incorrent. Please fix it.")
+
+        if PW > MPW:
+            perc = round(PW / MPW, 2)
+            self.warning_box(f"The current payload weight conguration exceeds the maximum payload by {perc}%.\nThe results may be incorrent. Please fix it.")
 
     def create_buttons(self, ex):
 

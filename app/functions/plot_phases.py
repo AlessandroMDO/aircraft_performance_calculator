@@ -1,8 +1,6 @@
 import matplotlib.pyplot as plt
-import matplotlib
-import random
-
 from .aero import Aero
+import copy
 
 aero = Aero()
 
@@ -41,7 +39,7 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
         "LONGITUDE": flight_parameters['landing_parameters']['LONGITUDE_LANDING']
     }
 
-    covered_distance_cruise = aero.get_haversine_distace(departure=departure_coods, arrival=arrival_cords)
+    covered_distance_cruise = aero.get_haversine_distance(departure=departure_coods, arrival=arrival_cords)
     print(f"covered_distance_cruise: {covered_distance_cruise/1000}")
 
     cruise_velocity = results_cruise_time['RESULT_CRUISE_VELOCITY']['CRUISE_VELOCITY']

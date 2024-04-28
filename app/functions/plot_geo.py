@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import contextily as ctx
 
 
-def get_map(latitude_takeoff, lontitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing):
+def get_map(latitude_takeoff, longitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing):
 
     latitude_A = latitude_takeoff
-    longitude_A = lontitude_takeoff
+    longitude_A = longitude_takeoff
 
     latitude_B = latitude_landing
     longitude_B = longitude_landing

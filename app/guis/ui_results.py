@@ -8,6 +8,7 @@ from functions.utils import get_logger
 from PySide2 import QtWidgets
 from functions.aero import Aero
 import matplotlib.pyplot as plt
+import copy
 import matplotlib as mpl
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from numpy import array, hstack, vstack, zeros
@@ -27,12 +28,22 @@ from .ui_display_pandas_table import PandasWindow
 
 backend = mpl.get_backend()
 
+def show_figure(fig):
+
+    # create a dummy figure and use its
+    # manager to display "fig"
+    dummy = plt.figure()
+    new_manager = dummy.canvas.manager
+    new_manager.canvas.figure = fig
+    fig.set_canvas(new_manager.canvas)
+
 class GUI_RESULTS(QMainWindow):
 
     def __init__(self, aircraft_parameters, flight_parameters, background_path="guis/RESULTS_800_800.png"):
 
         super(GUI_RESULTS, self).__init__()
 
+        self.fig_phases = None
         self.font = QFont()
         self.font.setPointSize(10)
 
@@ -453,6 +464,17 @@ class GUI_RESULTS(QMainWindow):
         #     label_geometry=QRect(693, 717, 63, 22))
         # self.objects_list.append(self.result_max_endurance_constant_h_v)
 
+
+        #Gráfico Flight Path
+        # self.display_flight_path_graph = QPushButton(self.centralwidget)
+        # # self.display_flight_path_graph = QPushButton(self.layout_fig_phases)
+        # self.display_flight_path_graph.setText("")  # Set an empty text to hide the label
+        # self.display_flight_path_graph.setGeometry(QRect(9, 622, 780, 165))
+        # self.display_flight_path_graph.setStyleSheet("border: none; background: none;")  # Hide border and background
+        # self.display_flight_path_graph.clicked.connect(self.invoke_flight_path_graph)
+        # self.objects_list.append(self.display_flight_path_graph)
+
+
         # --------------------------------------------------CLIMB -----------------------------------------------------#
 
 
@@ -867,15 +889,35 @@ class GUI_RESULTS(QMainWindow):
             results_cruise_time=results_cruise_time,
             results_descending_time=results_descending_time,
             results_landing_time=results_landing_time)
-        self.fig_phases.show()
+
+        self.copy_fig_phases = plot_phases(
+            flight_parameters=self.flight_parameters,
+            results_takeoff_time=results_takeoff_time,
+            results_climb_time=results_climb_time,
+            results_cruise_time=results_cruise_time,
+            results_descending_time=results_descending_time,
+            results_landing_time=results_landing_time)
+
+        # self.copy_fig_phases = copy.copy(self.fig_phases)
+
         self.canvas = FigureCanvas(self.fig_phases)
         self.canvas.setMinimumSize(7.5, 1.8)  # Convert inches to pixels
         for i in range(self.layout_fig_phases.count()): self.layout_fig_phases.itemAt(i).widget().close()
         self.layout_fig_phases.addWidget(self.canvas, alignment=Qt.AlignBottom)
 
-    def invoke_rate_of_climb_graph(self):
+        self.display_flight_path_graph = QPushButton(self.centralwidget)
+        self.display_flight_path_graph.setText("")  # Set an empty text to hide the label
+        self.display_flight_path_graph.setGeometry(QRect(9, 622, 780, 165))
+        self.display_flight_path_graph.setStyleSheet("border: none; background: none;")  # Hide border and background
+        self.display_flight_path_graph.clicked.connect(self.invoke_flight_path_graph)
 
-        #fig, axes = plt.subplots(1, 2)
+
+
+
+
+
+
+    def invoke_rate_of_climb_graph(self):
 
         c1 = self.result_graph_rate_of_climb.canvas
         c2 = self.result_service_ceiling_graph['RATE_OF_CLIMB_PER_ALTITUDE'].canvas
@@ -895,6 +937,10 @@ class GUI_RESULTS(QMainWindow):
         ax.matshow(a)
         fig.show()
 
+    def invoke_flight_path_graph(self):
+
+        show_figure(self.copy_fig_phases)
+        self.copy_fig_phases.show()
 
     def invoke_manevour_graphs(self):
 
@@ -915,10 +961,16 @@ class GUI_RESULTS(QMainWindow):
 
     def invoke_gliding_descending_graphs(self):
 
+        self.gliding_rate_of_descent_graph.show()
+        self.gliding_descending_angle_graph.show()
+        self.gliding_v_constant_graphs.show()
+        self.gliding_cl_constant_graphs.show()
+
         fig1 = self.gliding_rate_of_descent_graph.canvas
         fig2 = self.gliding_descending_angle_graph.canvas
         fig3 = self.gliding_v_constant_graphs.canvas
         fig4 = self.gliding_cl_constant_graphs.canvas
+
 
         fig1.draw()
         fig2.draw()
@@ -940,7 +992,7 @@ class GUI_RESULTS(QMainWindow):
 
         dpi = 400  # Adjust DPI as needed
 
-        fig, ax = plt.subplots(figsize=(8, 5), dpi=dpi)
+        fig, ax = plt.subplots(figsize=(10, 7), dpi=dpi)
         ax.matshow(a_combined)
         ax.set_axis_off()
         plt.tight_layout()
