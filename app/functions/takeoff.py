@@ -64,7 +64,6 @@ def climb_angle(T, D, W):
         elif gamma <= math.radians(1):
             gamma = math.radians(1.5)
 
-        logger.debug(f"Gamma: {math.degrees(gamma)}")
     except ValueError:
         gamma = math.radians(3)
     return gamma
@@ -208,18 +207,14 @@ def calc_total_takeoff_distance(flight_parameters, aircraft_parameters, altitude
 
     x_g = ground_run_distance(V_S=V_S, W=TOW, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S,
                               K=K, CD0=CD0, CL_max=CL_max, T0=T, thrust_factor=thrust_factor)
-    logger.debug(f"Ground Distance: {x_g}")
 
     x_r = (t_r := 3) * V_L0
-    logger.debug(f"Rotation Distance: {x_r}")
 
     x_cl = climb_distance(T=T, D=D, V_S=V_S, W=TOW)
-    logger.debug(f"Climb Distance: {x_cl}")
 
     gamma = climb_angle(T=T, D=D, W=TOW)
     R_tr = (V_L0 ** 2) / (0.15 * aero.g)
     x_tr = R_tr * math.sin(gamma)  # [m]
-    logger.debug(f"Transition Distance: {x_tr}")
 
     x_to = x_g + x_r + x_tr + x_cl  # [m]
 

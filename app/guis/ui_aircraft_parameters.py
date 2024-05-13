@@ -475,7 +475,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.cl_max.clear()
 
-        self.logger.debug(f"CL max: {self.cl_max_value}")
 
     def handle_cd0_value(self):
         text_cd0 = self.cd0.toPlainText()
@@ -492,7 +491,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.cd0.clear()
 
-        self.logger.debug(f"CD0: {self.cd0_value}")
 
     def handle_k_value(self):
 
@@ -510,7 +508,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.k.clear()
 
-        self.logger.debug(f"K value: {self.k_value}")
 
     def handle_e_value(self):
 
@@ -528,7 +525,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.e.clear()
 
-        self.logger.debug(f"e value: {self.e_value}")
 
     def handle_oew_value(self):
 
@@ -546,7 +542,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.oew.clear()
 
-        self.logger.debug(f"oew value: {self.oew_value}")
 
     def handle_fuel_capacity_value(self):
 
@@ -564,7 +559,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.fuel_weight.clear()
 
-        self.logger.debug(f"fuel_weight value: {self.fuel_weight_value}")
 
 
     def handle_maximum_payload_weight_value(self):
@@ -583,7 +577,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.maximum_payload_weight.clear()
 
-        self.logger.debug(f"maximum_payload_weight_value: {self.maximum_payload_weight_value}")
 
 
 
@@ -603,7 +596,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.mtow.clear()
 
-        self.logger.debug(f"mtow value: {self.mtow_value}")
 
     def handle_b_value(self):
 
@@ -621,7 +613,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.b.clear()
 
-        self.logger.debug(f"b value: {self.b_value}")
 
     def handle_tsfc_value(self):
 
@@ -639,7 +630,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.tsfc.clear()
 
-        self.logger.debug(f"tsfc value: {self.tsfc_value}")
 
     def handle_t0_value(self):
 
@@ -657,7 +647,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.t0.clear()
 
-        self.logger.debug(f"T0 value: {self.t0_value}")
 
     def handle_ne_value(self):
 
@@ -675,7 +664,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.ne.clear()
 
-        self.logger.debug(f"Number of engines value: {self.ne_value}")
 
     def handle_wing_area_value(self):
         text_wing_area = self.wing_area.toPlainText()
@@ -692,7 +680,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
             except ValueError:
                 self.wing_area.clear()
 
-        self.logger.debug(f"Wing area: {self.wing_area_value}")
 
     def handle_aircraft_db_change(self):
 
@@ -712,7 +699,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.t0.setPlainText(str(round(self.aircrafts_parameters[self.current_aircraft_db]['t0'] / 1, 3)))
         self.ne.setPlainText(str(self.aircrafts_parameters[self.current_aircraft_db]['ne']))
 
-        self.logger.debug(f"Current Aircraft DB: {self.current_aircraft_db}")
 
     # Essa função deve ser invocada por outras classes que necessitam de parâmetros da aeronave
     def get_aircraft_parameters(self, convert_units=False):

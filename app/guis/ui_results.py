@@ -9,6 +9,7 @@ from PySide2 import QtWidgets
 from functions.aero import Aero
 import matplotlib.pyplot as plt
 import copy
+from datetime import datetime
 import matplotlib as mpl
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 from numpy import array, hstack, vstack, zeros
@@ -511,6 +512,16 @@ class GUI_RESULTS(QMainWindow):
         self.objects_list.append(self.service_ceiling)
 
         # --------------------------------------------------------------------------------------------------------------#
+
+        # Botão de Resultados
+        self.download_sheets_results = QPushButton(self.centralwidget)
+        self.download_sheets_results.setText("")  # Set an empty text to hide the label
+        self.download_sheets_results.setGeometry(QRect(745, 48, 30, 30))
+        self.download_sheets_results.setStyleSheet("border: none; background: none;")  # Hide border and background
+        self.download_sheets_results.clicked.connect(self.download_results)
+        self.objects_list.append(self.download_sheets_results)
+
+        # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
 
         Results.setCentralWidget(self.centralwidget)
@@ -536,8 +547,6 @@ class GUI_RESULTS(QMainWindow):
         self.results_takeoff_time = calc_total_takeoff_time(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
 
         self.df_takeoff_per_altitude = calc_takeoff_distance_time_per_altitude(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
-        self.logger.debug("df_takeoff_per_altitude:")
-        print(self.df_takeoff_per_altitude)
 
         self.takeoff_distance_and_time_per_altitude.set_df(new_df=self.df_takeoff_per_altitude)
 
@@ -582,8 +591,6 @@ class GUI_RESULTS(QMainWindow):
 
 
         self.df_landing_per_altitude = calc_landing_distance_time_per_altitude(aircraft_parameters=self.aircraft_parameters, flight_parameters=self.flight_parameters)
-        self.logger.debug("df_landing_per_altitude:")
-        print(self.df_landing_per_altitude)
 
         self.landing_distance_and_time_per_altitude.set_df(new_df=self.df_landing_per_altitude)
 
@@ -698,7 +705,6 @@ class GUI_RESULTS(QMainWindow):
 
         ## h_CL
         self.result_range_constant_h_cl_value = self.results_cruising_range['RANGE_CONSTANT_HEIGHT_CL']
-        self.logger.debug(f"calculate_cruising_parameters | result_range_constant_h_cl_value: {self.result_range_constant_h_cl_value}")
         self.result_max_range_constant_h_cl_value = self.results_cruising_range['MAX_RANGE_CONSTANT_HEIGHT_CL']
 
         self.result_range_constant_h_cl.setText(str(round(self.result_range_constant_h_cl_value / 1000, 2)))
@@ -801,9 +807,8 @@ class GUI_RESULTS(QMainWindow):
     def calculate_gliding_parameters(self):
 
         self.result_gliding_range_endurance = gliding_range_endurance(flight_parameters=self.flight_parameters,
-                                                                      aircraft_parameters=self.aircraft_parameters,
-                                                                      graph_CL=True, graph_V=True)
-
+                                                                    aircraft_parameters=self.aircraft_parameters,
+                                                                    graph_CL=True, graph_V=True)
         # CL Constant
         self.gliding_cl_constant_graphs = self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_RANGE_ENDURANCE_CONSTANT_LIFT_GRAPH']
 
@@ -838,7 +843,6 @@ class GUI_RESULTS(QMainWindow):
         self.result_rate_of_descent_gliding_angle = gliding_angle_rate_of_descent(aircraft_parameters=self.aircraft_parameters,
                                                                                   flight_parameters=self.flight_parameters,
                                                                                   plot=True)
-
         self.result_rate_of_descent_value = self.result_rate_of_descent_gliding_angle['GLIDING_RATE_OF_DESCENT']
         self.result_gliding_angle_value = self.result_rate_of_descent_gliding_angle['GLIDING_ANGLE']
 
@@ -849,7 +853,58 @@ class GUI_RESULTS(QMainWindow):
         # self.result_rate_of_descent.setText(str(self.result_rate_of_descent_value))
 
 
+    def download_results(self):
 
+        self.results_data = {
+            "CURRENT_DATE": str(datetime.now()),
+            "AIRCRAFT_NAME": self.aircraft_parameters['AIRCRAFT_NAME'],
+            "NUMBER_OF_PASSENGERS": self.flight_parameters['NUMBER_OF_PASSENGERS'],
+            "FUEL_WEIGHT__KILOS": self.flight_parameters['FUEL_WEIGHT'] /(self.aero.g),
+            "DISPATCHED_CARGO__WEIGHT_KILOS": self.flight_parameters['DISPATCHED_CARGO_WEIGHT'] /(self.aero.g),
+            "CRUISE_ALTITUDE__METERS": self.flight_parameters['CRUISE_ALTITUDE'],
+            "CRUISE_VELOCITY__METERS_PER_SECOND": self.flight_parameters['CRUISE_VELOCITY'],
+            "GLIDING_VELOCITY__METERS_PER_SECOND": self.flight_parameters['GLIDING_VELOCITY'],
+            "DEPARTURE_LOCATIOM": self.flight_parameters['takeoff_parameters']['AIRPORT_TAKEOFF_NAME'],
+            "ARRIVAL_LOCATION": self.flight_parameters['landing_parameters']['AIRPORT_LANDING_NAME'],
+            "TAKEOFF_DISTANCE__METERS": round(self.results_takeoff_distance['TAKEOFF_DISTANCE'],2),
+            "TAKEOFF_TIME__SECONDS": round(self.results_takeoff_time['TAKEOFF_TIME'], 2),
+            "LANDING_DISTANCE__METERS": round(self.results_landing_distance['LANDING_DISTANCE'], 2),
+            "LANDING_TIME__SECONDS": round(self.results_landing_time['LANDING_TIME'], 2),
+            "MAX_LOITER_TIME__SECONDS": round(self.results_cruising_range['LOITER_TIME'], 2),
+            "MAX_CLIMB_ANGLE__DEGREE": round(self.result_max_climb_angle_rate_of_climb['MAX_GAMMA_CLIMB'], 2),
+            "MAX_RATE_OF_CLIMB__METERS_PER_SECOND": round(self.result_max_climb_angle_rate_of_climb['MAX_RATE_OF_CLIMB'], 2),
+            "CLIMB_DISTANCE_FASTEST_METERS": round(self.result_distance_time_fastest_climb['FASTEST_CLIMB_DISTANCE'], 2),
+            "CLIMB_DISTANCE_STEEPEST_METERS": round(self.result_cimb_time_distance_steepest['STEEPEST_CLIMB_DISTANCE'], 2),
+            "CLIMB_TIME_FASTEST_SECONDS": round(self.result_distance_time_fastest_climb['FASTEST_CLIMB_TIME'], 2),
+            "CLIMB_TIME_STEEPEST_SECONDS": round(self.result_cimb_time_distance_steepest['STEEPEST_CLIMB_TIME'], 2),
+            "SERVICE_CEILING__METERS": round(self.result_service_ceiling_graph['SERVICE_CEILING'], 2),
+            "PERFORMANCE_CEILING__METERS": round(self.result_service_ceiling_graph['PERFORMANCE_CEILING'], 2),
+            "OPERATIONAL_CEILING__METERS": round(self.result_service_ceiling_graph['OPERATIONAL_CEILING'], 2),
+            "CRUISE_RANGE_HEIGHT_CL__METERS": round(self.results_cruising_range['RANGE_CONSTANT_HEIGHT_CL'], 2),
+            "CRUISE_RANGE_VELOCITY_CL__METERS": round(self.results_cruising_range['RANGE_CONSTANT_VELOCITY_CL'], 2),
+            "CRUISE_RANGE_HEIGHT_VELOCITY__METERS": round(self.results_cruising_range['RANGE_CONSTANT_HEIGHT_VELOCITY'], 2),
+            "ENDURANCE_RANGE_HEIGHT_CL__SECONDS": round(self.results_cruising_endurance['ENDURANCE_CONSTANT_HEIGHT_CL'], 2),
+            "ENDURANCE_RANGE_VELOCITY_CL__SECONDS": round(self.results_cruising_endurance['ENDURANCE_CONSTANT_VELOCITY_CL'], 2),
+            "ENDURANCE_RANGE_HEIGHT_VELOCITY__SECONDS": round(self.results_cruising_endurance['ENDURANCE_CONSTANT_HEIGHT_VELOCITY'], 2),
+            "MINIMUM_DRAG__NEWTON": round(self.results_cruise_velocity['MINIMUM_DRAG'], 2),
+            "FASTEST_TURNING_RATE__RAD_PER_SECOND": round(self.results_fastest_turn['TURNING_RATE_FASTEST_TURN'], 2),
+            "TIGHTEST_TURNING_RATE__RAD_PER_SECOND": round(self.results_tighest_turn['TURNING_RATE_TIGHEST_TURN'], 2),
+            "FASTEST_LOAD_FACTOR": round(self.results_fastest_turn['LOAD_FACTOR_FASTEST_TURN'], 2),
+            "TIGHTEST_LOAD_FACTOR": round(self.results_tighest_turn['LOAD_FACTOR_TIGHEST_TURN'], 2),
+            "FASTEST_TURNING_RADIUS__METERS": round(self.results_fastest_turn['RADIUS_FASTEST_TURN'], 2),
+            "TIGHTEST_TURNING_RADIUS__METERS": round(self.results_stall['RADIUS_STALL'], 2),
+            "GLIDING_DISTANCE_V__METERS": round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_RANGE_CONSTANT_LIFT_STANDARD'], 2),
+            "GLIDING_TIME_V__SECONDS": round(self.result_gliding_range_endurance['GLIDING_CONSTANT_LIFT']['GLIDING_ENDURANCE_CONSTANT_LIFT_STANDARD'], 2),
+            "GLIDING_DISTANCE_CL__METERS": round(self.result_gliding_range_endurance['GLIDING_CONSTANT_AIRSPEED']['GLIDING_RANGE_CONSTANT_AIRSPEED_STANDARD'], 2),
+            "GLIDING_TIME_CL__SECONDS": round(self.result_gliding_range_endurance['GLIDING_CONSTANT_AIRSPEED']['GLIDING_ENDURANCE_CONSTANT_AIRSPEED_STANDARD']),
+            "CRUISE_DISTANCE_METERS": round(self.phase_parameters['CRUISE_DISTANCE_METERS'], 2),
+            "NECESSARY_FUEL_KILOS": round(self.phase_parameters['NECESSARY_FUEL_KILOS'], 2),
+            "ESTIMATED_TOTAL_FLIGHT_TIME_SECONDS": round(self.phase_parameters['ESTIMATED_TOTAL_FLIGHT_TIME_SECONDS'], 2)
+        }
+
+        self.df_results = DataFrame([self.results_data])
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV file", "", "CSV Files (*.csv)")
+        self.df_results.to_csv(file_path, sep=";", mode="a", index=False)
 
     def calculate_flight_phases(self):
 
@@ -882,7 +937,7 @@ class GUI_RESULTS(QMainWindow):
             "LANDING_FLARE_TIME": self.result_landing_flare_time
         }
 
-        self.fig_phases = plot_phases(
+        self.fig_phases, self.phase_parameters = plot_phases(
             flight_parameters=self.flight_parameters,
             results_takeoff_time=results_takeoff_time,
             results_climb_time=results_climb_time,
@@ -890,7 +945,7 @@ class GUI_RESULTS(QMainWindow):
             results_descending_time=results_descending_time,
             results_landing_time=results_landing_time)
 
-        self.copy_fig_phases = plot_phases(
+        self.copy_fig_phases, self.phase_parameters = plot_phases(
             flight_parameters=self.flight_parameters,
             results_takeoff_time=results_takeoff_time,
             results_climb_time=results_climb_time,
@@ -961,10 +1016,10 @@ class GUI_RESULTS(QMainWindow):
 
     def invoke_gliding_descending_graphs(self):
 
-        self.gliding_rate_of_descent_graph.show()
-        self.gliding_descending_angle_graph.show()
-        self.gliding_v_constant_graphs.show()
-        self.gliding_cl_constant_graphs.show()
+        # self.gliding_rate_of_descent_graph.show()
+        # self.gliding_descending_angle_graph.show()
+        # self.gliding_v_constant_graphs.show()
+        # self.gliding_cl_constant_graphs.show()
 
         fig1 = self.gliding_rate_of_descent_graph.canvas
         fig2 = self.gliding_descending_angle_graph.canvas
@@ -1009,10 +1064,6 @@ class GUI_RESULTS(QMainWindow):
     def invoke_gliding_cl_constant_graphs(self):
 
         self.gliding_cl_constant_graphs.show()
-
-    # def invoke_rate_of_descent_gliding_angle_graph(self):
-    #
-    #     self.gliding_rate_of_descent_gliding_angle_graph.show()
 
     def calculate_all_results(self):
 
