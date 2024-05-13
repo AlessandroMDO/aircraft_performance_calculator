@@ -54,6 +54,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon = 'gui_icon.png'
 )
 coll = COLLECT(
     exe,
@@ -64,4 +65,5 @@ coll = COLLECT(
     upx=True,
     upx_exclude=[],
     name='Aircraft_Performance_Parameters',
+    icon = 'gui_icon.png'
 )
