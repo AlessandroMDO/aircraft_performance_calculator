@@ -208,7 +208,7 @@ def calc_total_takeoff_distance(flight_parameters, aircraft_parameters, altitude
     x_g = ground_run_distance(V_S=V_S, W=TOW, mu=mu, V_wind=V_wind, theta_runway=theta_runway, altitude=altitude, S=S,
                               K=K, CD0=CD0, CL_max=CL_max, T0=T, thrust_factor=thrust_factor)
 
-    x_r = (t_r := 3) * V_L0
+    x_r = 3 * V_L0
 
     x_cl = climb_distance(T=T, D=D, V_S=V_S, W=TOW)
 
