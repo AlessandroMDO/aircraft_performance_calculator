@@ -1,4 +1,5 @@
 numpy
+pandas
 matplotlib==3.5.3
 frozendict==2.4.0
 PySide2==5.15.2.1
