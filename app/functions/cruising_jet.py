@@ -153,7 +153,6 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     c = (aircraft_parameters['TSFC'] / 3600)
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
-    logger.debug(f"calc_cruising_jet_range| Altitude: {altitude}")
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
         # Se for zero, quremos computar o valor
@@ -161,8 +160,6 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
             'CRUISE_VELOCITY'] if V_CRUISE is None else V_CRUISE
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
-
-    logger.debug(f"calc_cruising_jet_range| V_cru: {V_cru}")
 
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
@@ -173,28 +170,21 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
     OEW = aircraft_parameters['OEW']
 
     sigma = aero.get_sigma(altitude=altitude)
-    logger.debug(f"calc_cruising_jet_range | Sigma: {sigma}")
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
-    logger.debug(f"TOW: {TOW}")
 
     W_1 = TOW - 0.15 * FW
-    logger.info(f"W_1: {W_1}")
     W_2 = TOW - 0.95 * FW
 
     zeta = ((W_1 - W_2) / W_1) if zeta_CRUISE is None else zeta_CRUISE
-    logger.info(f"Zeta: {zeta}")
 
     CD0 = aircraft_parameters['CD0']
 
     CL_cru = (2 * W_1) / (S * aero.rho_0 * sigma * V_cru ** 2)
-    logger.debug(f"calc_cruising_jet_range| CL_cru: {CL_cru}")
 
     CD_cru = CD0 + K * CL_cru ** 2
-    logger.debug(f"CD_cru: {CD_cru}")
 
     E_cru = CL_cru / CD_cru
-    logger.debug(f"E_cru: {E_cru}")
 
     E_m = aircraft_parameters['E_m']
 
@@ -277,7 +267,6 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
     else:
         V_cru = flight_parameters['CRUISE_VELOCITY']
 
-    logger.debug(f"V_cru: {V_cru}")
 
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
@@ -288,17 +277,13 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
     OEW = aircraft_parameters['OEW']
 
     sigma = aero.get_sigma(altitude=altitude)
-    logger.debug(f"Sigma: {sigma}")
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
-    logger.debug(f"TOW: {TOW}")
 
     W_1 = TOW - 0.15 * FW
-    logger.info(f"W_1: {W_1}")
     W_2 = TOW - 0.95 * FW
 
     zeta = ((W_1 - W_2) / W_1) if zeta_CRUISE is None else zeta_CRUISE
-    logger.debug(f"calc_cruising_jet_endurance | zeta: {sigma}")
 
     CD0 = aircraft_parameters['CD0']
     CL_cru = (2 * W_1) / (S * aero.rho_0 * sigma * V_cru ** 2)
@@ -380,7 +365,6 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
     OEW = aircraft_parameters['OEW']
     MTOW = aircraft_parameters['MTOW']
     MPW = aircraft_parameters['MAXIMUM_PAYLOAD_WEIGHT']
-    logger.debug(f"calc_payload_x_range | MTOW : {MTOW}")
 
     E_m = aircraft_parameters['E_m']
 
@@ -485,7 +469,6 @@ def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, 
     OEW = aircraft_parameters['OEW']
 
     TOW = float(NP * aero.person_weight + OEW + FW + CW) if W_CRUISE is None else W_CRUISE
-    logger.debug(f"TOW: {TOW}")
 
     W_1 = TOW - 0.15 * FW
 
@@ -512,7 +495,6 @@ def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, 
     }
 
     covered_distance_cruise = aero.get_haversine_distance(departure=departure_coods, arrival=arrival_cords)
-    logger.debug(f"covered_distance_cruise | covered_distance_cruise : {covered_distance_cruise / 1000}")
 
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
     # OJHA - 8.35
@@ -525,24 +507,12 @@ def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, 
             (E_cru * (2 * CL_cru * E_m * K * math.tan(c * x_h_V / (2 * E_m * V_cru)) + 1))
             )
 
-    logger.debug(f"calc_cruise_fuel_weight | zeta : {zeta}")
     W_2 = W_1 * (1 - zeta)
 
     delta_fuel = W_1 - W_2
     percent_reduction = delta_fuel / W_1
-    logger.debug(f"calc_cruise_fuel_weight | percent_reduction : {percent_reduction * 100}")
-    logger.debug(f"calc_cruise_fuel_weight | needed fuel weight [ton] : {(delta_fuel / 9.81) / 1000}")
-
-    logger.debug(f"calc_cruise_fuel_weight | W_1 : {W_1}")
-    logger.debug(f"calc_cruise_fuel_weight | W_2 : {W_2}")
-    logger.debug(f"calc_cruise_fuel_weight | F_W : {FW}")
 
     valid_fuel = delta_fuel > FW
-
-    if valid_fuel is True:
-        logger.debug(f"Quantidade insuficiente. calc_cruise_fuel_weight | W2: {W_2}\n delta:{delta_fuel}")
-    else:
-        logger.debug(f"Quantidade suficiente. calc_cruise_fuel_weight | W2: {W_2}\n delta:{delta_fuel}")
 
     return {
         "DELTA_FUEL": delta_fuel,

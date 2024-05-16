@@ -1,17 +1,11 @@
 import unittest
-import math
 
-from app.functions.takeoff import climb_angle, calc_total_takeoff_distance, calc_total_takeoff_time
+from app.functions.landing import calc_total_landing_time, calc_total_landing_distance
 
+#TODO: ajustar cenários de teste
+class TestLanding(unittest.TestCase):
 
-class TestTakeoff(unittest.TestCase):
-
-    def test_climb_angle(self):
-
-        b = climb_angle(T=1500, D=600, W=800)
-        self.assertAlmostEqual(b, math.radians(3), places=1)
-
-    def test_calc_total_takeoff_distance(self):
+    def test_total_landing_distance(self):
         aircraft_parameters = {
             "S": 9,
             "CD0": 0.016,
@@ -46,10 +40,9 @@ class TestTakeoff(unittest.TestCase):
 
         }
 
-        result = calc_total_takeoff_distance(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
-        print(result)
+        result = calc_total_landing_distance(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
 
-    def test_calc_total_takeoff_time(self):
+    def test_total_landing_time(self):
 
         aircraft_parameters = {
             "S": 9,
@@ -85,10 +78,7 @@ class TestTakeoff(unittest.TestCase):
 
         }
 
-        result = calc_total_takeoff_time(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
-        print(result)
-
-
+        result = calc_total_landing_time(aircraft_parameters=aircraft_parameters, flight_parameters=flight_parameters)
 
 if __name__ == '__main__':
     unittest.main()

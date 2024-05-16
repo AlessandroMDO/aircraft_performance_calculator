@@ -243,14 +243,8 @@ class GUI_DECOLAGEM(QMainWindow):
 
         self.airport_list_takeoff.setToolTip(QCoreApplication.translate("Takeoff_Landing", u"Select the departure airport", None))
         self.airport_list_takeoff.setCurrentIndex(0)
-        self.logger.debug(self.airport_list_takeoff.currentIndex())
-
         current_takeoff_airport = self.airport_list_takeoff.currentText()
-        self.logger.debug(f"current_takeoff_airport: {current_takeoff_airport}")
-
         self.current_takeoff_airport_iata = current_takeoff_airport[6:9]
-        self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
-
 
         self.airport_list_takeoff.raise_()
 
@@ -383,11 +377,8 @@ class GUI_DECOLAGEM(QMainWindow):
         self.airport_list_landing.setCurrentIndex(3)
 
         current_landing_airport = self.airport_list_landing.currentText()
-        self.logger.debug(f"current_landing_airport: {current_landing_airport}")
 
         self.current_landing_airport_iata = current_landing_airport[6:9]
-        self.logger.debug(f"current_landing_airport_iata: {self.current_landing_airport_iata}")
-
 
         self.airport_list_landing.raise_()
 
@@ -447,9 +438,6 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.wind_velocity_takeoff.clear()
 
-        self.logger.debug(f"Wind Velocity Takeoff: {self.wind_velocity_takeoff_value}")
-
-
     def handle_runway_temperature_takeoff_value(self):
 
         text_runway_temperature_takeoff = self.runway_temperature_takeoff.toPlainText()
@@ -467,9 +455,6 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.runway_temperature_takeoff.clear()
 
-        self.logger.debug(f"Runway Temperature Takeoff: {self.runway_temperature_takeoff_value}")
-
-
     def handle_slope_takeoff_value(self):
 
         text_runway_slope_takeoff = self.runway_slope_takeoff.toPlainText()
@@ -484,9 +469,6 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.runway_slope_takeoff.clear()
 
-        self.logger.debug(f"Runway Slope Takeoff: {self.runway_slope_takeoff_value}")
-
-
     def handle_wind_takeoff_against_checkbox(self):
 
         self.vento_contra_takeoff_flag = -1 if self.vento_contra_takeoff.isChecked() else 1
@@ -495,18 +477,10 @@ class GUI_DECOLAGEM(QMainWindow):
     def handle_airport_list_takeoff_change(self):
 
         current_takeoff_airport = self.airport_list_takeoff.currentText()
-        self.logger.debug(f"current_takeoff_airport: {current_takeoff_airport}")
-
         self.current_takeoff_airport_iata = current_takeoff_airport[6:9]
-        self.logger.debug(f"current_takeoff_airport_iata: {self.current_takeoff_airport_iata}")
         self.airport_takeoff_parameters = {}
 
-
     def calculate_takeoff_airport_parameters(self):
-        self.logger.debug('----------------')
-        self.logger.debug(self.airport_list_takeoff.currentText())
-        self.logger.debug(self.current_takeoff_airport_iata)
-        self.logger.debug(self.current_takeoff_airport_iata is None)
         airport_takeoff_results, _ = execute_generic_query(
             db_path=r"./db/utils/aero.db",
             query=f"select elevacao, pista, latitude, longitude, '{self.current_takeoff_airport_iata}' as airport_code from airports where iata='{self.current_takeoff_airport_iata}';",
@@ -550,13 +524,11 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.runway_temperature_landing.clear()
 
-        self.logger.debug(f"Runway Temperature Landing: {self.runway_temperature_landing_value}")
 
 
     def handle_slope_landing_value(self):
 
         text_runway_slope_landing = self.runway_slope_landing.toPlainText()
-        self.logger.debug(f"Runway Slope Landing: {text_runway_slope_landing}")
 
         # Checamos se a caixa de texto está vazia
         if not text_runway_slope_landing:
@@ -572,7 +544,6 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.runway_slope_landing.clear()
 
-        self.logger.debug(f"Runway Slope Landing: {self.runway_slope_landing_value}")
 
     def handle_wind_landing_against_checkbox(self):
         self.vento_contra_landing_flag = -1 if self.vento_contra_landing.isChecked() else 1
@@ -594,7 +565,6 @@ class GUI_DECOLAGEM(QMainWindow):
             except ValueError:
                 self.wind_velocity_landing.clear()
 
-        self.logger.debug(f"Wind Velocity Landing: {self.wind_velocity_landing_value}")
 
     def handle_airport_list_landing_change(self):
 

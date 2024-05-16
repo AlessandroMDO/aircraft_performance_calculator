@@ -40,7 +40,6 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
     }
 
     covered_distance_cruise = aero.get_haversine_distance(departure=departure_coods, arrival=arrival_cords)
-    print(f"covered_distance_cruise: {covered_distance_cruise/1000}")
 
     cruise_velocity = results_cruise_time['RESULT_CRUISE_VELOCITY']['CRUISE_VELOCITY']
 
@@ -48,7 +47,6 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
 
     #Descending
 
-    #TODO: Para um voo normal, o ângulo de descida é de aproximadamente 3 graus. Deveria forçar ele aqui ?!
     initial_descending_altitude = final_cruise_altitude
     final_descending_altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING'] + aero.h_Sc
     total_descending_time = results_descending_time['RESULT_DESCENDING_TIME']
@@ -62,7 +60,6 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
     result_landing_flare_time = results_landing_time['LANDING_FLARE_TIME']
     result_landing_rotation_time = results_landing_time['LANDING_ROTATION_TIME']
     result_landing_roll_time     = results_landing_time['LANDING_ROLL_TIME']
-
 
     ###########################
     i_time = [
@@ -119,7 +116,6 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
     ]
 
     cont_time = [sum(i_time[:i+1])/3600 for i in range(len(i_time))]
-    print(f"cont_time: {cont_time}")
 
     fig, axes = plt.subplots(figsize=(7.5, 1.8))
 
@@ -148,7 +144,13 @@ def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, res
 
     plt.grid()
 
-    return fig
+    parameters = {
+        "CRUISE_DISTANCE_METERS": covered_distance_cruise,
+        "NECESSARY_FUEL_KILOS": results_cruise_time['DELTA_FUEL'] * 1000,
+        "ESTIMATED_TOTAL_FLIGHT_TIME_SECONDS": cont_time[-1] * 3600
+    }
+
+    return fig, parameters
 
 
 

@@ -173,4 +173,4 @@ if __name__ == "__main__":
     app.exec_()
 
 
-#https://tree.nathanfriend.io/?s=(%27op2!(%27fancy3~fullPath!false~trailingSlash3~rootDot3)~7(%277%27app-db*utilsA.db-func2A0climb0gli4Cplot_geo085-guis*6results068_C6flight_condi206aircraft_parameters5-main_gui5-tests**B%27)~version!%271%27)*-9-B905*2tions3!true4ding05.py6ui_7source!8takeoff9%20%20A*aeroB%5CnClan4%01CBA987654320-*
+#pyinstaller --noconfirm app/main_gui.spec
