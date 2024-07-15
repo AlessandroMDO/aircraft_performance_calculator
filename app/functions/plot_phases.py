@@ -1,11 +1,31 @@
 import matplotlib.pyplot as plt
 from .aero import Aero
-import copy
 
 aero = Aero()
 
+
 def plot_phases(flight_parameters, results_takeoff_time, results_climb_time, results_cruise_time,
                 results_descending_time, results_landing_time):
+
+    """
+    Plota um gráfico mostrando a altitude versus o tempo para diferentes fases de voo,
+    além de fornecer informações adicionais sobre o voo (distância, tempo estimado e combustível estimado).
+
+    Parâmetros:
+    - flight_parameters (dict): Dicionário contendo parâmetros de voo como altitude de decolagem,
+      altitude de cruzeiro, altitude de pouso, coordenadas de decolagem e pouso, etc.
+    - results_takeoff_time (dict): Dicionário contendo resultados dos tempos de decolagem.
+    - results_climb_time (dict): Dicionário contendo resultados dos tempos de subida.
+    - results_cruise_time (dict): Dicionário contendo resultados dos tempos de cruzeiro.
+    - results_descending_time (dict): Dicionário contendo resultados dos tempos de descida.
+    - results_landing_time (dict): Dicionário contendo resultados dos tempos de pouso.
+
+    Retorna:
+    - fig: Objeto figura do matplotlib contendo o gráfico gerado.
+    - parameters (dict): Dicionário contendo parâmetros calculados como distância de cruzeiro,
+      quantidade de combustível necessário, tempo de voo total estimado em segundos.
+
+    """
 
     #Takeoff
 

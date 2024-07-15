@@ -8,7 +8,6 @@ import math
 from .utils import get_logger
 
 
-
 class Aero:
 
     def __init__(self):
@@ -26,12 +25,13 @@ class Aero:
 
     def calculate_general_drag_coefficient(self, K, CD0, S=None, altitude=None, V=None, W=None, CL=None):
         """
-            Calcula o coeficiente de arrasto geral com base no coeficiente de sustentação, área da asa, altitude, velocidade, peso e coeficiente de arrasto parasita.
+            Calcula o coeficiente de arrasto geral com base no coeficiente de sustentação, área da asa, altitude,
+            velocidade, peso e coeficiente de arrasto parasita.
 
             Parâmetros:
-            - K: Coeficiente de inclinação da sustentação (CL por radiano).
-            - CD0: Coeficiente de arrasto parasita sem sustentação (CD0).
-            - S: Área da asa (opcional, será calculada automaticamente se não fornecida).
+            - K: Coeficiente de arrasto induzido.
+            - CD0: Coeficiente de arrasto parasita.
+            - S: Área da asa (opcional, CD será calculada automaticamente se não fornecida).
             - altitude: Altitude em metros (opcional).
             - V: Velocidade em metros por segundo (opcional).
             - W: Peso da aeronave em Newtons (opcional).
@@ -50,6 +50,21 @@ class Aero:
         return CD
 
     def calculate_general_thrust(self, altitude, thrust_factor, sea_level_thrust):
+        """
+        Calcula o empuxo geral de uma aeronave em uma determinada altitude.
+
+        Parâmetros:
+        altitude (float): Altitude em metros (m) na qual a força de empuxo é calculada.
+        thrust_factor (float): Fator de empuxo que define a relação entre a densidade do ar e o empuxo.
+        sea_level_thrust (float): Força de empuxo ao nível do mar em Newtons (N).
+
+        Retorna:
+        float: Força de empuxo na altitude especificada em Newtons (N).
+
+        A força de empuxo é calculada usando a fórmula:
+        T = sea_level_thrust * (sigma(altitude) ** thrust_factor),
+        onde sigma(altitude) é a razão da densidade do ar na altitude especificada em relação à densidade ao nível do mar.
+        """
 
         T = sea_level_thrust * (self.get_sigma(altitude=altitude) ** thrust_factor)
         return T
@@ -90,7 +105,6 @@ class Aero:
 
 
     def get_sigma(self, altitude: float) -> float:
-
         """
         Calcula a razão de densidade do ar não-dimensional (sigma) em uma dada altitude.
 
@@ -113,16 +127,19 @@ class Aero:
     def calculate_stall_velocity(self, W, rho, CL_max, S):
 
         """
-        Calculates the stall velocity of an aircraft.
+        Calcula a velocidade de estol de uma aeronave.
 
-        Parameters:
-        - W (float): Aircraft weight in Newtons.
-        - rho (float): Air density in kg/m^3.
-        - CL_max (float): Maximum coefficient of lift.
-        - S (float): Wing reference area in square meters.
+        Parâmetros:
+        W (float): Peso da aeronave em Newtons (N).
+        rho (float): Densidade do ar em quilogramas por metro cúbico (kg/m^3).
+        CL_max (float): Coeficiente de sustentação máximo (adimensional).
+        S (float): Área da asa em metros quadrados (m^2).
 
-        Returns:
-        float: Stall velocity in meters per second.
+        Retorna:
+        float: Velocidade de estol em metros por segundo (m/s).
+
+        A velocidade de estol é calculada usando a fórmula:
+        V_S = sqrt(2 * W / (CL_max * S * rho))
         """
 
         V_S = math.sqrt(2 * W / (CL_max * S * rho))
@@ -131,6 +148,25 @@ class Aero:
 
     @staticmethod
     def get_haversine_distance(departure, arrival):
+
+        """
+        Calcula a distância Haversine entre dois pontos geográficos na superfície da Terra.
+
+        Parâmetros:
+        departure (dict): Dicionário contendo a latitude e longitude do ponto de partida.
+            - 'LATITUDE' (float): Latitude do ponto de partida em graus.
+            - 'LONGITUDE' (float): Longitude do ponto de partida em graus.
+        arrival (dict): Dicionário contendo a latitude e longitude do ponto de chegada.
+            - 'LATITUDE' (float): Latitude do ponto de chegada em graus.
+            - 'LONGITUDE' (float): Longitude do ponto de chegada em graus.
+
+        Retorna:
+        float: Distância entre os dois pontos em metros (m).
+
+        A fórmula de Haversine é utilizada para calcular a distância:
+        distância = 2 * raio_da_terra * atan2(sqrt(a), sqrt(1 - a)),
+        onde a = sin²(Deltalat/2) + cos(lat1) * cos(lat2) * sin²(Deltalon/2).
+        """
 
         latitude_1 = departure['LATITUDE']
         longitude_1 = departure['LONGITUDE']
@@ -145,7 +181,6 @@ class Aero:
         dlat = lat2 - lat1
         a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-        radius_of_earth = 6_371_000  # Radius of Earth in meters
+        radius_of_earth = 6_371_000  # Raio da terra em metros
         distance = radius_of_earth * c
         return distance
-

@@ -4,14 +4,48 @@ from functions.aero import Aero
 from functions.utils import default_graph_colors
 from numpy import linspace, arange
 import matplotlib.pyplot as plt
-
 import math
 
 
 c = Aero()
 colors = default_graph_colors()
 
+
 def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitude=None, W=None, V_gli=None, plot=False, display=False):
+    """
+    Calcula o ângulo de planeio e a taxa de descida para uma aeronave em voo de planeio numa altitude específica.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzida (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso de combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso de carga despachada (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'GLIDING_VELOCITY' (float): Velocidade de planeio (m/s).
+        - 'takeoff_parameters' (dict): Parâmetros de decolagem.
+            - 'LATITUDE_TAKEOFF' (float): Latitude de decolagem.
+            - 'LONGITUDE_TAKEOFF' (float): Longitude de decolagem.
+        - 'landing_parameters' (dict): Parâmetros de pouso.
+            - 'LATITUDE_LANDING' (float): Latitude de pouso.
+            - 'LONGITUDE_LANDING' (float): Longitude de pouso.
+    - altitude (float, opcional): Altitude específica para calcular o ângulo de planagem e a taxa de descida (m).
+    - W (float, opcional): Peso de decolagem a ser usado (N).
+    - V_gli (float, opcional): Velocidade de planeio a ser usada (m/s).
+    - plot (bool, opcional): Se True, plota os gráficos do ângulo de planeio e da taxa de descida. Default é False.
+    - display (bool, opcional): Se True, exibe os gráficos se plot=True. Default é False.
+
+    Retorna:
+    - dict: Dicionário contendo as seguintes informações:
+        - 'GLIDING_ANGLE' (float): Ângulo de planeio calculado em graus.
+        - 'GLIDING_RATE_OF_DESCENT' (float): Taxa de descida calculada em m/s.
+        - 'GLIDING_ANGLE_GRAPH' (matplotlib.figure.Figure): Figura do gráfico do ângulo de planeio, se plot=True, se não None.
+        - 'RATE_OF_DESCENT_GRAPH' (matplotlib.figure.Figure): Figura do gráfico da taxa de descida, se plot=True, se não None.
+    """
 
     NP = flight_parameters['NUMBER_OF_PASSENGERS']  # number of passengers
     FW = flight_parameters['FUEL_WEIGHT']  # fuel weight
@@ -86,6 +120,7 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
         ax_rate_of_descent.yaxis.set_ticks(arange(ax_rate_of_descent.get_ylim()[0], ax_rate_of_descent.get_ylim()[1], 4))
         ax_gliding_angle.yaxis.set_ticks(arange(ax_gliding_angle.get_ylim()[0], ax_gliding_angle.get_ylim()[1], 5))
         plt.tight_layout()
+
         if display is True:
             plt.show()
         else:
@@ -102,6 +137,48 @@ def gliding_angle_rate_of_descent(aircraft_parameters, flight_parameters, altitu
 
 
 def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gli=None, graph_V=False, graph_CL=False, display=False):
+
+    """
+    Calcula o alcance e a autonomia de planeio para uma aeronave em voo de planeio com várias condições de velocidade ou coeficiente de sustentação.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'CL_MAX' (float): Coeficiente de sustentação máximo (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'K' (float): Coeficiente de arrasrto induzido (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso de combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso de carga despachada (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'GLIDING_VELOCITY' (float): Velocidade de planeio (m/s).
+    - W (float, opcional): Peso de decolagem a ser usado (N).
+    - V_gli (float, opcional): Velocidade de planeio a ser usada (m/s).
+    - graph_V (bool, opcional): Se True, plota os gráficos de velocidade. Default é False.
+    - graph_CL (bool, opcional): Se True, plota os gráficos de coeficiente de sustentação. Default é False.
+    - display (bool, opcional): Se True, exibe os gráficos se plot=True. Default é False.
+
+    Retorna:
+    - dict: Dicionário contendo as seguintes informações:
+        - 'GLIDING_CONSTANT_LIFT' (dict): Resultados para condição de sustentação constante.
+            - 'GLIDING_RANGE_CONSTANT_LIFT_STANDARD' (float): Alcance de planeio padrão calculado (m).
+            - 'GLIDING_ENDURANCE_CONSTANT_LIFT_STANDARD' (float): Autonomia de planeio padrão calculada (s).
+            - 'GLIDING_MAX_RANGE_CONSTANT_LIFT' (float): Alcance máximo de planeio para sustentação constante calculado (m).
+            - 'GLIDING_ENDURANCE_MAX_RANGE_CONSTANT_LIFT_MAX' (float): Autonomia de planeio máxima para alcance máximo calculada (s).
+            - 'GLIDING_MAX_ENDURANCE_CONSTANT_LIFT' (float): Autonomia máxima de planeio para sustentação constante calculada (s).
+            - 'GLIDING_RANGE_MAX_ENDURANCE_CONSTANT_LIFT' (float): Alcance máximo de planeio para autonomia máxima calculado (m).
+            - 'GLIDING_RANGE_ENDURANCE_CONSTANT_LIFT_GRAPH' (matplotlib.figure.Figure): Figura do gráfico se graph_CL=True, se não None.
+        - 'GLIDING_CONSTANT_AIRSPEED' (dict): Resultados para condição de velocidade constante.
+            - 'GLIDING_RANGE_CONSTANT_AIRSPEED_STANDARD' (float): Alcance de planeio padrão calculado (m).
+            - 'GLIDING_ENDURANCE_CONSTANT_AIRSPEED_STANDARD' (float): Autonomia de planeio padrão calculada (s).
+            - 'GLIDING_MAX_RANGE_CONSTANT_AIRSPEED' (float): Alcance máximo de planeio para velocidade constante calculado (m).
+            - 'GLIDING_ENDURANCE_MAX_RANGE_CONSTANT_AIRSPEED' (float): Autonomia de planeio máxima para alcance máximo calculada (s).
+            - 'GLIDING_RANGE_MAX_ENDURANCE_CONSTANT_AIRSPEED' (float): Alcance máximo de planeio para autonomia máxima calculado (m).
+            - 'GLIDING_MAX_ENDURANCE_CONSTANT_AIRSPEED' (float): Autonomia máxima de planeio para velocidade constante calculada (s).
+            - 'GLIDING_RANGE_ENDURANCE_CONSTANT_AIRSPEED_GRAPH' (matplotlib.figure.Figure): Figura do gráfico se graph_V=True, se não None.
+    """
 
     S = aircraft_parameters['S']
     CL_max = aircraft_parameters['CL_MAX']
@@ -184,7 +261,6 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             ax_cl_constant.set_ylabel('Time [h]', color="black", fontsize=14)
 
             fig2 = ax_cl_constant.axvline(CL_max, c=colors['dark_green'], label="CLmax", ls="-.")
-            # fig6 = ax_cl_constant.scatter(CL_max_range_cond, t_cl_max_range / 3600, label="Endurance of the maximum range", marker='>', color=colors['green'], s=50)
 
             fig7 = ax_cl_constant.scatter(CL_max_endurance_cond, t_cl_max_endurance / 3600,
                                           label=f"Maximum Endurance = {round(t_cl_max_endurance / 3600, 2)}", marker='v', color=colors['red'], s=50)
@@ -197,7 +273,6 @@ def gliding_range_endurance(aircraft_parameters, flight_parameters, W=None, V_gl
             fig5 = ax2.scatter(CL_max_range_cond, x_cl_max_range / 1000,
                                label=f"Maximum Range = {round(x_cl_max_range / 1000, 2)}", marker ='<', color=colors['green'], s=50)
 
-            # fig8 = ax2.scatter(CL_max_endurance_cond, x_cl_max_endurance / 1000, label="Range of the maximum endurance", marker='^', color=colors['red'], s = 50)
 
             lines, labels = ax_cl_constant.get_legend_handles_labels()
             lines2, labels2 = ax2.get_legend_handles_labels()

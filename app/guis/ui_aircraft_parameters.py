@@ -40,7 +40,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.new_aircraft_name = None
         self.background_path = background_path
 
-        # _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db", query="select * from Airplanes;", first_value=False)
         _, self.aircrafts_parameters = execute_generic_query(db_path=r"db/aero.db",
                                                              query="select nome_aeronave, id, cd0, area, cl_max, oew/1000 as oew, tsfc, b, e, t0/1000 as t0, ne, mtow/1000 as mtow, fuel_weight/1000 as fuel_weight, maximum_payload_weight/1000 as maximum_payload_weight from Airplanes;", first_value=False)
 
@@ -92,15 +91,6 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         font = QFont()
         font.setPointSize(10)
 
-
-        # palette1 = QPalette()
-        # palette1.setBrush(QPalette.Active, QPalette.Base, brush)
-        # palette1.setBrush(QPalette.Active, QPalette.Window, brush1)
-        # palette1.setBrush(QPalette.Inactive, QPalette.Base, brush)
-        # palette1.setBrush(QPalette.Inactive, QPalette.Window, brush1)
-        # palette1.setBrush(QPalette.Disabled, QPalette.Base, brush1)
-        # palette1.setBrush(QPalette.Disabled, QPalette.Window, brush1)
-
         # --------------------------------------------------------------------------------------------------------------#
         # --------------------------------------------- BACKGROUND IMAGE -----------------------------------------------#
         # --------------------------------------------------------------------------------------------------------------#
@@ -108,25 +98,9 @@ class GUI_AIRCRAFT_PARAMETERS(QMainWindow):
         self.background = QLabel(self.centralwidget)
         self.background.setObjectName(u"background")
         self.background.setGeometry(QRect(0, 0, 800, 800))
-        # self.background.setMinimumSize(QSize(800, 800))
-        # self.background.setMaximumSize(QSize(800, 800))
-        # self.background.setLayoutDirection(Qt.LeftToRight)
-        # self.background.setAutoFillBackground(False)
         self.background.setPixmap(QPixmap(self.background_path))
         self.background.update()
-        # self.background.setScaledContents(True)
-        # self.background.setAlignment(Qt.AlignCenter)
-        # self.background.setIndent(0)
-        # self.background.setText("")
 
-        # --------------------------------------------------------------------------------------------------------------#
-        # --------------------------------------------------------------------------------------------------------------#
-
-        # self.run_load_button = QPushButton(self.centralwidget)
-        # self.run_load_button.setText("")  # Set an empty text to hide the label
-        # self.run_load_button.setGeometry(QRect(508, 547, 168, 33))
-        # self.run_load_button.setStyleSheet("border: none; background: none;")  # Hide border and background
-        # self.run_analysis_button.clicked.connect(self.invoke_load_aircraft_from_db)
 
         # --------------------------------------------------------------------------------------------------------------#
         # -------------------------------------------- LIST AIRCRAFTS IN DB --------------------------------------------#

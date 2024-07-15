@@ -11,18 +11,15 @@ class TableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
-            if index.column() == 0:  # For the index column
+            if index.column() == 0:
                 return str(self._data.index[index.row()])
-            else:  # For other columns
-                # Adjust column index by subtracting 1 to account for the index column
+            else:
                 return str(self._data.iloc[index.row(), index.column() - 1])
 
     def rowCount(self, index):
-        # The length of the outer list.
         return len(self._data)
 
     def columnCount(self, index):
-        # Add 1 for the index column
         return self._data.shape[1] + 1
 
     def headerData(self, section, orientation, role):
@@ -32,10 +29,9 @@ class TableModel(QtCore.QAbstractTableModel):
                 if section == 0:
                     return self.index_column_name
                 else:
-                    # Adjust section - 1 to get the correct column name from DataFrame columns
                     return str(self._data.columns[section - 1])
             elif orientation == Qt.Vertical:
-                return str(section + 1)  # Indexing starts from 0, so add 1 to display 1-based index
+                return str(section + 1)
 
 
 class PandasWindow(QtWidgets.QMainWindow):
@@ -64,7 +60,7 @@ class PandasWindow(QtWidgets.QMainWindow):
 
     def adjust_window_size(self):
         header_widths = [self.table.horizontalHeader().sectionSize(i) for i in range(self.table.model().columnCount(None))]
-        total_width = sum(header_widths) + self.table.verticalHeader().width() + 4  # Add some padding
+        total_width = sum(header_widths) + self.table.verticalHeader().width() + 4
         self.resize(total_width, self.height())
 
 if __name__ == "__main__":

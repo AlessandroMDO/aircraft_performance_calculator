@@ -9,6 +9,22 @@ aero = Aero()
 
 
 def get_climb_parameters(altitude):
+    """
+    Obtém os parâmetros de subida de uma aeronave com base na altitude.
+
+    Parâmetros:
+    altitude (float): Altitude em metros (m) para a qual os parâmetros de subida são determinados.
+
+    Retorna:
+    dict: Dicionário contendo os parâmetros de subida:
+        - "e" (float): Fator de eficiência de subida.
+        - "h_rix" (float): Altitude de referência em metros (m).
+        - "beta" (float): Parâmetro beta de subida em metros (m).
+
+    Os parâmetros são determinados com base na altitude fornecida:
+    - Para altitudes até 11.000 metros, os valores são: e = 1, h_rix = 0, beta = 9296.
+    - Para altitudes acima de 11.000 metros, os valores são: e = 0.3063, h_rix = 11000, beta = 6216.
+    """
 
     if altitude <= 11000:
         e = 1
@@ -29,6 +45,39 @@ def get_climb_parameters(altitude):
 def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_parameters: dict,
                                        ALTITUDE_GLI=None, V_CRUISE=None,
                                        plot=False, display=False):
+    """
+    Calcula o ângulo máximo de subida (gamma_max) e a taxa máxima de subida (h_max) de uma aeronave.
+
+    Parâmetros:
+    aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'OEW' (float): Peso operacional vazio da aeronave em Newton (N).
+        - 'CD0' (float): Coeficiente de arrasto de arrasto parasita (adimensional).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (int): Número de motores.
+        - 'TSFC' (float): Consumo específico de combustível por empuxo em kg/N.s.
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    flight_parameters (dict): Dicionário contendo os parâmetros do voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível em Newton (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada em Newton (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro em metros (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro em metros por segundo (m/s).
+    ALTITUDE_GLI (float, opcional): Altitude de subida em metros (m). Se None, usa metade da altitude de cruzeiro.
+    V_CRUISE (float, opcional): Velocidade de cruzeiro em metros por segundo (m/s). Se None, calcula a partir dos parâmetros de voo.
+    plot (bool, opcional): Se True, plota o gráfico da taxa de subida por velocidade. Padrão é False.
+    display (bool, opcional): Se True, exibe o gráfico. Padrão é False.
+
+    Retorna:
+    dict: Dicionário contendo os resultados:
+        - "MAX_GAMMA_CLIMB" (float): Ângulo máximo de subida (adimensional).
+        - "MAX_RATE_OF_CLIMB" (float): Taxa máxima de subida em metros por segundo (m/s).
+        - "GRAPH_RATE_OF_CLIMB_PER_VELOCITY" (fig): Figura do gráfico da taxa de subida por velocidade, se plot for True.
+
+    A função calcula o ângulo máximo de subida (gamma_max) e a taxa máxima de subida (h_max) usando as equações relevantes
+    e os parâmetros fornecidos. Se plot for True, plota e opcionalmente exibe o gráfico da taxa de subida em função da velocidade.
+    """
 
     logger = get_logger(log_name="CLIMB")
 
@@ -60,12 +109,6 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
 
     # # 10.30 - OJHA - Max Gamma (Steepest Climb)
     gamma_max = (T_Em_SSL * sigma / W) - (1 / E_m)
-
-    # Gud - 18.25 Max Rate of Climb (Fastest Climb)
-    # Z = 1 + math.sqrt(1 + 3/(E_m ** 2 / ((T_Em_SSL * sigma)/W)**2))
-    #
-    # h_max = ((math.sqrt((W * Z / S)/(3 * rho * CD0)) * (T_Em_SSL * sigma/W)**1.5) *
-    #          (1 - Z/6) - (3 * 1)/(2 * (T_Em_SSL * sigma / W) ** 2 * (E_m ** 2) * Z))
 
     TT = 1 + math.sqrt(1 + 3/(E_m**2 * (T_Em_SSL * sigma/W)**2))
 
@@ -123,6 +166,35 @@ def calc_max_climb_angle_rate_of_climb(aircraft_parameters: dict, flight_paramet
 
 
 def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_parameters: dict):
+    """
+    Calcula a distância, o tempo e o consumo de combustível para a subida mais íngreme de uma aeronave.
+
+    Parâmetros:
+    aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'OEW' (float): Peso operacional vazio da aeronave em Newtons (N).
+        - 'CD0' (float): Coeficiente de arrasto de arrasto zero (adimensional).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (int): Número de motores.
+        - 'TSFC' (float): Consumo específico de combustível por empuxo em kg/N.s.
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    flight_parameters (dict): Dicionário contendo os parâmetros do voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível em Newtons (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada em Newtons (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro em metros (m).
+
+    Retorna:
+    dict: Dicionário contendo os resultados:
+        - "STEEPEST_CLIMB_TIME" (float): Tempo de subida mais íngreme em segundos (s).
+        - "STEEPEST_CLIMB_DISTANCE" (float): Distância de subida mais íngreme em metros (m).
+        - "STEEPEST_CLIMB_FUEL_CONSUMPTION" (float): Consumo de combustível durante a subida mais íngreme (adimensional).
+
+    A função calcula a distância, o tempo e o consumo de combustível para a subida mais íngreme usando as equações relevantes
+    e os parâmetros fornecidos. Utiliza a fórmula de empuxo geral, a razão da densidade do ar e outros parâmetros aerodinâmicos
+    para determinar os valores.
+    """
 
     logger = get_logger(log_name="CLIMB")
 
@@ -165,12 +237,15 @@ def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_paramete
     A = math.sqrt(W / W0) * (V_Em_SSL / E_m)  # 10.36
     B = (E_m / (W / W0)) * (T_Em_SSL / W0)    # 10.37
 
-    t1 = (e * math.sqrt(B)) * math.exp(-1 * (h1 - h_rix) / (2 * beta)) - 1
-    t2 = (e * math.sqrt(B)) * math.exp(-1 * (h2 - h_rix) / (2 * beta)) + 1
-    t3 = (e * math.sqrt(B)) * math.exp(-1 * (h1 - h_rix) / (2 * beta)) + 1
-    t4 = (e * math.sqrt(B)) * math.exp(-1 * (h2 - h_rix) / (2 * beta)) - 1
+    t1 = (1 * math.sqrt(B * e)) * math.exp(-1 * (h1 - h_rix) / (2 * beta)) - 1
+    t2 = (1 * math.sqrt(B * e)) * math.exp(-1 * (h2 - h_rix) / (2 * beta)) + 1
+    t3 = (1 * math.sqrt(B * e)) * math.exp(-1 * (h1 - h_rix) / (2 * beta)) + 1
+    t4 = (1 * math.sqrt(B * e)) * math.exp(-1 * (h2 - h_rix) / (2 * beta)) - 1
 
-    t_sc = (beta / (A * math.sqrt(B)) * math.log((t1 * t2) / (t3 * t4)))
+    # 10.46
+    t_sc = (
+            (beta / (A * math.sqrt(B))) *
+            math.log((t1 * t2) / (t3 * t4)))
 
     x1 = B * e - math.exp((h1 - h_rix) / beta)
     x2 = B * e - math.exp((h2 - h_rix) / beta)
@@ -208,6 +283,35 @@ def calc_distance_time_steepest_climb(aircraft_parameters: dict, flight_paramete
 
 
 def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
+    """
+    Calcula o teto de serviço, o teto de desempenho e o teto operacional de uma aeronave.
+
+    Parâmetros:
+    aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'OEW' (float): Peso operacional vazio da aeronave em Newtons (N).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (int): Número de motores.
+        - 'TSFC' (float): Consumo específico de combustível por empuxo em kg/N.s.
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    flight_parameters (dict): Dicionário contendo os parâmetros do voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível em Newtons (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada em Newtons (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro em metros (m).
+
+    Retorna:
+    dict: Dicionário contendo os resultados:
+        - "SERVICE_CEILING" (float): Teto de serviço em metros (m).
+        - "PERFORMANCE_CEILING" (float): Teto de desempenho em metros (m).
+        - "OPERATIONAL_CEILING" (float): Teto operacional em metros (m).
+        - "RATE_OF_CLIMB_PER_ALTITUDE" (matplotlib.figure.Figure): Gráfico da razão de subida por altitude.
+
+    A função calcula o teto de serviço, o teto de desempenho e o teto operacional usando os parâmetros da aeronave e do voo.
+    Utiliza a densidade do ar, o empuxo geral e outros parâmetros aerodinâmicos para determinar os valores de teto.
+    """
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
     altitude_linspace = linspace(0.1*altitude, 3*altitude, 50)
@@ -236,15 +340,7 @@ def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
 
     for altitude_i in altitude_linspace:
 
-        rho_i = aero.get_density(altitude=altitude_i)
         sigma_i = aero.get_sigma(altitude=altitude_i)
-
-        # 18.25 Gud Max Rate of Climb (Fastest Climb)
-        # Z_i = 1 + math.sqrt(1 + 3 / ((E_m ** 2) / ((T_Em_SSL * sigma_i) / W) ** 2))
-        #
-        # h_max_i = ((math.sqrt((W * Z_i / S) / (3 * rho_i * CD0)) * (T_Em_SSL * sigma_i / W) ** 1.5) *
-        #          (1 - Z_i / 6) - (3 * 1) / (2 * (T_Em_SSL * sigma_i / W) ** 2 * (E_m ** 2) * Z_i))
-
 
         #OJHA - 10.65
         TT_i = 1 + math.sqrt(1 + 3 / (E_m ** 2 * (T_Em_SSL * sigma_i / W) ** 2))
@@ -285,6 +381,33 @@ def calc_service_ceiling(aircraft_parameters: dict, flight_parameters: dict):
 
 
 def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameters: dict):
+    """
+    Calcula o tempo, distância e consumo de combustível para a subida mais rápida da aeronave.
+
+    Parâmetros:
+    aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'OEW' (float): Peso operacional vazio da aeronave em Newtons (N).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (int): Número de motores.
+        - 'TSFC' (float): Consumo específico de combustível por empuxo em kg/N.s.
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    flight_parameters (dict): Dicionário contendo os parâmetros do voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível em Newtons (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada em Newtons (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro em metros (m).
+
+    Retorna:
+    dict: Dicionário contendo os resultados:
+        - "FASTEST_CLIMB_TIME" (float): Tempo de subida mais rápida em segundos.
+        - "FASTEST_CLIMB_DISTANCE" (float): Distância percorrida durante a subida mais rápida em metros.
+        - "FASTEST_CLIMB_FUEL_CONSUPTION" (float): Consumo de combustível durante a subida mais rápida (adimensional).
+        - "FASTEST_CLIMB_FUEL_CONSUMED" (float): Quantidade de combustível consumido durante a subida mais rápida em Newtons (N).
+
+    """
 
     logger = get_logger(log_name="CLIMB")
 
@@ -375,6 +498,3 @@ def calc_distance_time_fastest_climb(aircraft_parameters: dict, flight_parameter
         "FASTEST_CLIMB_FUEL_CONSUPTION": zeta_fc,
         "FASTEST_CLIMB_FUEL_CONSUMED": delta_fuel
     }
-
-
-
