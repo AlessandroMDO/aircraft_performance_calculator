@@ -1,7 +1,6 @@
 from functools import wraps
 import logging
 from logging.config import dictConfig
-from functools import lru_cache
 
 
 def deep_freeze(thing):
@@ -25,6 +24,7 @@ def deep_freeze_args(func):
     def wrapped(*args, **kwargs):
         return func(*deep_freeze(args), **deep_freeze(kwargs))
     return wrapped
+
 
 def print_formatted_string(input_string=None, total_length=50, how=None):
     if how == "center":

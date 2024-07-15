@@ -11,12 +11,37 @@ colors = default_graph_colors()
 
 def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
 
+    """
+    Calcula e plota o fator de carga, velocidade angular e raio de curva em função da velocidade para uma aeronave em um voo de cruzeiro.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (float): Número de motores da aeronave (adimensional).
+        - 'OEW' (float): Peso operacional vazio (N).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro (m/s).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro para cálculos (m/s). Se não fornecido, calcula automaticamente.
+    - display (bool, opcional): Se True, exibe o gráfico. Caso contrário, apenas retorna a figura (default: False).
+    - W_CRUISE (float, opcional): Peso durante o cruzeiro (N). Se não fornecido, calcula automaticamente.
+
+    Retorna:
+    - matplotlib.figure.Figure: Figura contendo dois subplots:
+        - Subplot 1: Gráfico de fator de carga (n) e velocidade angular (rad/s) em função da velocidade (m/s).
+        - Subplot 2: Gráfico de raio de curva (km) em função da velocidade (m/s).
+
+    """
+
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
     CD0 = aircraft_parameters['CD0']
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
-    altitude_linspace = linspace(0.3*altitude, altitude, 3)
 
     T0 = aircraft_parameters['T0']
     T = T0 * aircraft_parameters['NE']
@@ -145,6 +170,33 @@ def calc_load_factor_turning_rate_turning_radius_graph(aircraft_parameters: dict
 
 
 def calc_fastest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
+    """
+        Calcula os parâmetros de desempenho para a curva coordenada mais rápida da aeronave.
+
+        Parâmetros:
+        - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+            - 'S' (float): Área da asa (m²).
+            - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+            - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+            - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+            - 'NE' (float): Número de motores da aeronave (adimensional).
+            - 'OEW' (float): Peso operacional vazio (N).
+            - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+        - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+            - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - V_CRUISE (float, opcional): Velocidade de cruzeiro específica para cálculos (m/s). Se não fornecido, calcula automaticamente.
+        - display (bool, opcional): Se True, exibe detalhes do cálculo. Caso contrário, apenas retorna os resultados (default: False).
+        - W_CRUISE (float, opcional): Peso durante o cruzeiro (N). Se não fornecido, calcula automaticamente.
+
+        Retorna:
+        - dict: Dicionário contendo os seguintes parâmetros calculados para a curva mais rápida:
+            - 'VELOCITY_FASTEST_TURN' (float): Velocidade da curva mais rápida (m/s).
+            - 'LOAD_FACTOR_FASTEST_TURN' (float): Fator de carga da curva mais rápida (adimensional).
+            - 'EFICIENCY_FASTEST_TURN' (float): Eficiência da curva mais rápida (adimensional).
+            - 'RADIUS_FASTEST_TURN' (float): Raio da curva mais rápida (m).
+            - 'TURNING_RATE_FASTEST_TURN' (float): Velocidade ângulr da curva mais rápida (rad/s).
+
+        """
 
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
@@ -196,9 +248,36 @@ def calc_fastest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUI
 # OJHA - 11.6
 def calc_tighest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
 
+    """
+    Calcula os parâmetros de desempenho para a curva mais apertada da aeronave.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (float): Número de motores da aeronave (adimensional).
+        - 'OEW' (float): Peso operacional vazio (N).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro específica para cálculos (m/s). Se não fornecido, calcula automaticamente.
+    - display (bool, opcional): Se True, exibe detalhes do cálculo. Caso contrário, apenas retorna os resultados (default: False).
+    - W_CRUISE (float, opcional): Peso durante o cruzeiro (N). Se não fornecido, calcula automaticamente.
+
+    Retorna:
+    - dict: Dicionário contendo os seguintes parâmetros calculados para a viragem mais apertada:
+        - 'VELOCITY_TIGHEST_TURN' (float): Velocidade da curva mais apertada (m/s).
+        - 'LOAD_FACTOR_TIGHEST_TURN' (float): Fator de carga da curva mais apertada (adimensional).
+        - 'EFICIENCY_TIGHEST_TURN' (float): Eficiência da curva mais apertada (adimensional).
+        - 'RADIUS_TIGHEST_TURN' (float): Raio da curva mais apertada (m).
+        - 'TURNING_RATE_TIGHEST_TURN' (float): Velocidade ângular da curva mais apertada (rad/s).
+
+    """
+
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']
-    CD0 = aircraft_parameters['CD0']
 
     altitude = flight_parameters['CRUISE_ALTITUDE']
 
@@ -244,6 +323,35 @@ def calc_tighest_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUI
 
 
 def calc_stall_turn(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False,  W_CRUISE=None):
+
+    """
+    Calcula os parâmetros de desempenho para a curna na condição de estol da aeronave.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'CL_MAX' (float): Coeficiente de sustentação máximo (adimensional).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (float): Número de motores da aeronave (adimensional).
+        - 'OEW' (float): Peso operacional vazio (N).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro específica para cálculos (m/s). Se não fornecido, calcula automaticamente.
+    - display (bool, opcional): Se True, exibe detalhes do cálculo. Caso contrário, apenas retorna os resultados (default: False).
+    - W_CRUISE (float, opcional): Peso durante o cruzeiro (N). Se não fornecido, calcula automaticamente.
+
+    Retorna:
+    - dict: Dicionário contendo os seguintes parâmetros calculados para a curva em estol:
+        - 'VELOCITY_STALL' (float): Velocidade da curva em estol (m/s).
+        - 'LOAD_FACTOR_STALL' (float): Fator de carga da curva em estol (adimensional).
+        - 'EFICIENCY_STALL' (float): Eficiência da curva em estol (adimensional).
+        - 'RADIUS_STALL' (float): Raio da curva em estol (m).
+        - 'TURNING_RATE_STALL' (float): Velocidade angular na condição de estol (rad/s).
+
+    """
 
     S = aircraft_parameters['S']
     K = aircraft_parameters['K']

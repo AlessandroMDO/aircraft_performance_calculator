@@ -1,31 +1,3 @@
-"""
-# -------------------------------------------------------------------------------------------------------------------- #
-# ----------------------------------------------------- TAKEOFF ------------------------------------------------------ #
-# -------------------------------------------------------------------------------------------------------------------- #
-
-
-The performance analysis of takeoff consists of calculating the distance and time covered during the takeoff phase.
-
-x_to = x_g + x_r + x_tr + x_cl
-t_to = t_g + t_r + t_tr + t_cl
-
-x_to ; t_to  = takeoff distance; takeoff time               [m]; [s]
-x_g  ; t_g   = ground round distance; ground round time     [m]; [s]
-x_r  ; t_r   = rotation distance; rotation time             [m]; [s]
-x_tr ; t_tr  = transition distance; transition time         [m]; [s]
-x_cl ; t_cl  = climb distance; climb time                   [m]; [s]
-
-V_S     = stall speed                                       [m/s]
-V_L0    = litoff speed, usually 1.15*V_S                    [m/s]
-T       = thrust                                            [N]
-L       = lift                                              [N]
-D       = drag                                              [N]
-W       = weight                                            [N]
-mu      = coefficient of friction                           [-]
-
-The aircraft weight [W] in the bellow equations is considered to be constant because only a insignifcant fraction of
-the fuel is consumed during the ground run.
-"""
 import os
 import sys
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -176,7 +148,7 @@ def climb_time(T, D, V_S, W):
 # -------------------------------------------------------------------------------------------------------------------- #
 # ------------------------------------------------------ TAKEOFF ----------------------------------------------------- #
 # -------------------------------------------------------------------------------------------------------------------- #
-def calc_total_takeoff_distance(flight_parameters, aircraft_parameters, altitude=None, show=False):
+def calc_total_takeoff_distance(flight_parameters, aircraft_parameters, altitude=None):
 
     V_wind = flight_parameters['takeoff_parameters']['WIND_VELOCITY_TAKEOFF']
     theta_runway = math.radians(flight_parameters['takeoff_parameters']['RUNWAY_SLOPE_TAKEOFF'])

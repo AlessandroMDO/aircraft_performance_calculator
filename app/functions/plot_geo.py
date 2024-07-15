@@ -1,34 +1,60 @@
-import geopandas as gpd
-from shapely.geometry import Point, LineString
 import matplotlib.pyplot as plt
-import contextily as ctx
+from mpl_toolkits.basemap import Basemap
+from .aero import Aero
 
 
-def get_map(latitude_takeoff, longitude_takeoff, latitude_landing, longitude_landing, airport_takeoff, airport_landing):
+aero = Aero()
 
-    latitude_A = latitude_takeoff
-    longitude_A = longitude_takeoff
 
-    latitude_B = latitude_landing
-    longitude_B = longitude_landing
+def get_map(latitude_takeoff=None, longitude_takeoff=None, latitude_landing=None,
+             longitude_landing=None, airport_takeoff=None, airport_landing=None):
 
-    geometry = [Point(longitude_A, latitude_A), Point(longitude_B, latitude_B)]
-    gdf_points = gpd.GeoDataFrame(geometry=geometry, crs='EPSG:4326')
+    """
+    Gera um mapa mostrando a rota entre dois pontos geográficos e informações sobre a distância.
 
-    line = LineString([gdf_points.geometry.iloc[0], gdf_points.geometry.iloc[1]])
-    gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326')
+    Parâmetros:
+    - latitude_takeoff (float): Latitude do ponto de decolagem.
+    - longitude_takeoff (float): Longitude do ponto de decolagem.
+    - latitude_landing (float): Latitude do ponto de pouso.
+    - longitude_landing (float): Longitude do ponto de pouso.
+    - airport_takeoff (str): Nome do aeroporto de decolagem.
+    - airport_landing (str): Nome do aeroporto de pouso.
+
+    Retorna:
+    - fig: Objeto figura do matplotlib contendo o mapa gerado.
+
+    """
 
     fig, ax = plt.subplots()
 
-    gdf_line.plot(ax=ax, color='blue', linewidth=2)
-    gdf_points.plot(ax=ax, color='black', markersize=50)
-    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik)
+    margin = 10
+    min_lat = min(latitude_takeoff, latitude_landing) - margin
+    max_lat = max(latitude_takeoff, latitude_landing) + margin
+    min_lon = min(longitude_takeoff, longitude_landing) - margin
+    max_lon = max(longitude_takeoff, longitude_landing) + margin
 
-    plt.xlabel('Longitude')
-    plt.ylabel('Latitude')
-    plt.title(f'Route from \n{airport_takeoff} to \n{airport_landing}')
+    map =Basemap(projection='cyl', llcrnrlat=min_lat, urcrnrlat=max_lat, llcrnrlon=min_lon, urcrnrlon=max_lon,lat_ts=20,resolution='c')
 
-    # Display the plot
-    plt.legend()
+    map.drawmapboundary(fill_color='aqua')
+    map.fillcontinents(color='coral', lake_color='aqua')
+
+    map.drawcoastlines()
+    map.drawcountries()
+    map.drawstates()
+
+    map.drawgreatcircle(longitude_takeoff, latitude_takeoff, longitude_landing, latitude_landing, color='b')
+
+    departure = {
+        "LATITUDE": latitude_takeoff,
+        "LONGITUDE": longitude_takeoff,
+    }
+    
+    arrival = {
+        "LATITUDE": latitude_landing,
+        "LONGITUDE": longitude_landing,
+    }
+
+    great_circule_distance = round(aero.get_haversine_distance(departure, arrival) / 1000, 2)
+
+    plt.title(f'Route from \n{airport_takeoff} to \n{airport_landing}\n Distance: {great_circule_distance} km')
     return fig
-

@@ -27,6 +27,41 @@ aero = Aero()
 
 def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_STALL=None,
                          T_CRUISE=None, plot=False, display=False):
+
+    """
+    Calcula a velocidade de cruzeiro da aeronave, considerando o arrasto total mínimo.
+
+    Parâmetros:
+    aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'OEW' (float): Peso operacional vazio da aeronave em Newtons (N).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'S' (float): Área da asa (m²).
+        - 'T0' (float): Empuxo ao nível do mar por motor em Newtons (N).
+        - 'NE' (int): Número de motores.
+        - 'TSFC' (float): Consumo específico de combustível por empuxo em kg/N.s.
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    flight_parameters (dict): Dicionário contendo os parâmetros do voo.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível em Newtons (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada em Newtons (N).
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro em metros (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro atual da aeronave em metros por segundo (m/s).
+    W_CRUISE (float, opcional): Peso de decolagem da aeronave para o cálculo da velocidade de cruzeiro em Newtons (N).
+    V_STALL (float, opcional): Velocidade de estol da aeronave em metros por segundo (m/s).
+    T_CRUISE (float, opcional): Empuxo do motor durante o cruzeiro em Newtons (N).
+    plot (bool, opcional): Se True, gera um gráfico do arrasto e impulso em função da velocidade.
+    display (bool, opcional): Se True e plot=True, exibe o gráfico.
+
+    Retorna:
+    dict: Dicionário contendo os resultados:
+        - "CRUISE_VELOCITY" (float): Velocidade de cruzeiro calculada em metros por segundo (m/s).
+        - "MINIMUM_DRAG" (float): Arrasto mínimo durante o cruzeiro em Newtons (N).
+        - "CRUISE_VELOCITIES" (list): Lista contendo as duas possíveis velocidades de cruzeiro calculadas em metros por segundo (m/s).
+        - "CRUISE_DRAG_GRAPH" (matplotlib.figure.Figure, opcional): Figura do gráfico de arrasto e impulso, se plot=True.
+
+    """
+
     altitude = flight_parameters['CRUISE_ALTITUDE']
     sigma = aero.get_sigma(altitude=altitude)
 
@@ -66,7 +101,7 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
     V_S = aero.calculate_stall_velocity(W=W, CL_max=CL_max, S=S, rho=rho_0) if V_STALL is None else V_STALL
 
     if flight_parameters['CRUISE_VELOCITY'] == 0:
-        # Se for zero, quremos computar o valor
+        # Se for zero, queremos computar o valor
         # Selecionamos a maior velocidade de cruzeiro
         V_cru = max(V_cru_1, V_cru_2) if (V_cru_1 > V_S and V_cru_2 > V_S) else V_cru_1 if (
                     V_cru_1 > V_S > V_cru_2) else V_cru_2
@@ -123,32 +158,46 @@ def calc_cruise_velocity(aircraft_parameters: dict, flight_parameters: dict, W_C
 
 def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, W_CRUISE=None,
                             zeta_CRUISE=None, plot=False, display=False):
+
+    """
+    Calcula o alcance normal e máximo de um jato em cruzeiro sob diferentes configurações de voo.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'TSFC' (float): Consumo específico de combustível (kg/N/h).
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro (m/s).
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso do carga despachada (N).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro específica a ser usada (m/s).
+    - W_CRUISE (float, opcional): Peso de decolagem específico a ser usado (N).
+    - zeta_CRUISE (float, opcional): Fração do peso do combustível a ser consumido.
+    - plot (bool, opcional): Se True, gera um gráfico do arrasto versus velocidade de cruzeiro. Default é False.
+    - display (bool, opcional): Se True, exibe o gráfico gerado. Default é False.
+
+    Retorna:
+    Um dicionário contendo os seguintes valores calculados:
+    - 'RANGE_CONSTANT_HEIGHT_CL' (float): Alcance máximo em voo de altitude constante com coeficiente de sustentação constante.
+    - 'MAX_RANGE_CONSTANT_HEIGHT_CL' (float): Alcance máximo em voo de altitude constante com coeficiente de sustentação constante.
+    - 'LOITER_TIME' (float): Tempo de espera estimado.
+    - 'RANGE_CONSTANT_VELOCITY_CL' (float): Alcance máximo em voo de velocidade constante com coeficiente de sustentação constante.
+    - 'MAX_RANGE_CONSTANT_VELOCITY_CL' (float): Alcance máximo em voo de velocidade constante com coeficiente de sustentação constante.
+    - 'RANGE_CONSTANT_HEIGHT_VELOCITY' (float): Alcance máximo em voo de altitude constante com velocidade constante.
+    - 'MAX_RANGE_CONSTANT_HEIGHT_VELOCITY' (float): Alcance máximo em voo de altitude constante com velocidade constante.
+    """
+
     # 9.3.1 - Maximum Range of constant altitude-constant lift coefficient flight (página 239)
     # 9.3.2 - Maximum Range of constant airspeed-constant lift coefficient flight (página 241)
     # 9.3.3 - Maximum Range of constant altitude-airspeed (página 243)
 
     logger = get_logger(log_name="Cruise")
-
-    """
-    Calcula o alcance de cruzeiro de uma aeronave a jato com base nos parâmetros da aeronave, altitude e peso.
-
-    Parâmetros:
-    - aircraft_parameters: Um dicionário contendo os parâmetros da aeronave, incluindo 'TSFC', 'WING_AREA', 'K', 'TOW', 'OPERATIONAL_WEIGHT', 'MAX_PAYLOAD_WEIGHT', 'CD0', e 'CL_MAX'.
-    - altitude: Altitude em metros.
-    - W: Peso da aeronave em Newtons.
-    - show: Um sinalizador booleano que indica se os resultados devem ser exibidos (opcional, padrão é False).
-
-    Retorna:
-    Um dicionário contendo três casos de faixa de voo:
-    - "range_constant_height_cl": Faixa para voo com altura constante e coeficiente de sustentação constante.
-    - "range_constant_velocity_cl": Faixa para voo com velocidade constante e coeficiente de sustentação constante.
-    - "range_constant_height_velocity": Faixa para voo com altitude constante e velocidade constante.
-
-    Se show for True, também exibe os resultados formatados.
-
-    Notas:
-    - A função assume que a função calc_cruise_velocity() está definida e disponível no escopo.
-    """
 
     c = (aircraft_parameters['TSFC'] / 3600)
 
@@ -253,6 +302,38 @@ def calc_cruising_jet_range(aircraft_parameters: dict, flight_parameters: dict, 
 
 def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: dict,
                                 W_CRUISE=None, V_CRUISE=None, zeta_CRUISE=None, show=False):
+    """
+    Calcula a autonomia máxima de um jato em cruzeiro sob diferentes configurações de voo.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'TSFC' (float): Consumo específico de combustível (kg/N/h).
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzida (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro (m/s).
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso do combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso da carga despachada (N).
+    - W_CRUISE (float, opcional): Peso de decolagem a ser usado (N).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro a ser usada (m/s).
+    - zeta_CRUISE (float, opcional): Fração do peso do combustível a ser consumido (adimensional).
+    - show (bool, opcional): Se True, exibe informações adicionais. Default é False.
+
+    Retorna:
+    Um dicionário contendo os seguintes valores calculados:
+    - 'ENDURANCE_CONSTANT_HEIGHT_CL' (float): Endurance em voo de altitude constante com coeficiente de sustentação constante.
+    - 'MAX_ENDURANCE_CONSTANT_HEIGHT_CL' (float): Endurance máxima em voo de altitude constante com coeficiente de sustentação constante.
+    - 'ENDURANCE_CONSTANT_VELOCITY_CL' (float): Endurance em voo de velocidade constante com coeficiente de sustentação constante.
+    - 'MAX_ENDURANCE_CONSTANT_VELOCITY_CL' (float): Endurance máxima em voo de velocidade constante com coeficiente de sustentação constante.
+    - 'ENDURANCE_CONSTANT_HEIGHT_VELOCITY' (float): Endurance em voo de altitude constante com velocidade constante.
+    - 'MAX_ENDURANCE_CONSTANT_HEIGHT_VELOCITY' (float): Endurance máxima em voo de altitude constante com velocidade constante.
+    """
+
     logger = get_logger(log_name="Cruise")
 
     c = (aircraft_parameters['TSFC'] / 3600)
@@ -340,6 +421,29 @@ def calc_cruising_jet_endurance(aircraft_parameters: dict, flight_parameters: di
 # -------------------------------------------------------------------------------------------------------------------- #
 
 def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_CRUISE=None, display=False):
+    """
+    Calcula e visualiza o diagrama de carga paga de uma aeronave.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'TSFC' (float): Consumo específico de combustível (kg/N/h).
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+        - 'MTOW' (float): Peso máximo de decolagem da aeronave (N).
+        - 'MAXIMUM_PAYLOAD_WEIGHT' (float): Peso máximo de carga paga (N).
+        - 'E_m' (float): Eficiência aerodinâmica máxima (adimensional).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro (m/s).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro específica a ser usada (m/s).
+    - display (bool, opcional): Se True, exibe o gráfico. Default é False.
+
+    Retorna:
+    - fig_payload_range (matplotlib.figure.Figure): Figura contendo o gráfico de carga paga versus alcance.
+    """
+
     logger = get_logger(log_name="Cruise")
 
     n = (aircraft_parameters['TSFC'] / 3600)
@@ -448,6 +552,39 @@ def calc_payload_x_range(aircraft_parameters: dict, flight_parameters: dict, V_C
 
 
 def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, W_CRUISE=None, V_CRUISE=None):
+
+    """
+    Calcula a redução percentual de combustível durante o voo de cruzeiro e verifica se a quantidade de combustível restante é válida.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'TSFC' (float): Consumo específico de combustível (kg/N/h).
+        - 'S' (float): Área da asa (m²).
+        - 'K' (float): Coeficiente de arrasto induzido (adimensional).
+        - 'CD0' (float): Coeficiente de arrasto parasita (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo.
+        - 'CRUISE_ALTITUDE' (float): Altitude de cruzeiro (m).
+        - 'CRUISE_VELOCITY' (float): Velocidade de cruzeiro (m/s).
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso de combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso de carga despachada (N).
+        - 'takeoff_parameters' (dict): Parâmetros de decolagem.
+            - 'LATITUDE_TAKEOFF' (float): Latitude de decolagem.
+            - 'LONGITUDE_TAKEOFF' (float): Longitude de decolagem.
+        - 'landing_parameters' (dict): Parâmetros de pouso.
+            - 'LATITUDE_LANDING' (float): Latitude de pouso.
+            - 'LONGITUDE_LANDING' (float): Longitude de pouso.
+    - W_CRUISE (float, opcional): Peso de decolagem a ser usado (N).
+    - V_CRUISE (float, opcional): Velocidade de cruzeiro a ser usada (m/s).
+
+    Retorna:
+    - dict: Dicionário contendo as seguintes informações:
+        - 'DELTA_FUEL' (float): Quantidade de combustível reduzida durante o voo de cruzeiro (N).
+        - 'ZETA' (float): Fator de redução de combustível durante o voo de cruzeiro (adimensional).
+        - 'VALID_FUEL' (bool): Indicação se a quantidade restante de combustível é válida após o voo de cruzeiro.
+    """
+
     logger = get_logger(log_name="Cruise")
 
     c = (aircraft_parameters['TSFC'] / 3600)
@@ -498,10 +635,8 @@ def calc_cruise_fuel_weight(aircraft_parameters: dict, flight_parameters: dict, 
 
     # Case 3 - Range of Flight Parameters of Constant Altitude-Constant Airspeed Flight
     # OJHA - 8.35
-    # x_h_V = ((2 * V_cru * E_m) / c) * math.atan(E_cru * zeta / (2 * E_m * (1 - K * E_cru * CL_cru * zeta)))
     x_h_V = covered_distance_cruise
 
-    # zeta = 2*E_m*math.tan(c*x_h_V/(2*E_m*V_cru))/(E_cru*(2*CL_cru*E_m*K*math.tan(c*x_h_V/(2*E_m*V_cru)) + 1))
     zeta = (2 * E_m *
             math.tan(c * x_h_V / (2 * E_m * V_cru)) /
             (E_cru * (2 * CL_cru * E_m * K * math.tan(c * x_h_V / (2 * E_m * V_cru)) + 1))

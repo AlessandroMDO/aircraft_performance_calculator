@@ -6,7 +6,7 @@ from PySide2.QtWidgets import *
 from functions.utils import get_logger
 from PySide2 import QtWidgets
 from functions.aero import Aero
-from functions.plot_geo_2 import get_map
+from functions.plot_geo import get_map
 from PySide2.QtWidgets import QMainWindow, QPushButton, QWidget, QLabel, QCheckBox, QTextEdit
 from db.utils.db_utils import *
 from guis.ui_new_airport_table import InputTableWindow

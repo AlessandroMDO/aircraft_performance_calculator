@@ -31,8 +31,6 @@ backend = mpl.get_backend()
 
 def show_figure(fig):
 
-    # create a dummy figure and use its
-    # manager to display "fig"
     dummy = plt.figure()
     new_manager = dummy.canvas.manager
     new_manager.canvas.figure = fig
@@ -227,26 +225,6 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(647, 564, 75, 16))
         self.objects_list.append(self.result_gliding_cl_constant_default_endurance)
 
-        # Result Max Range
-        # self.result_gliding_cl_constant_max_range = self.create_Qlabel(
-        #     label_name="result_gliding_cl_constant_max_range",
-        #     label_geometry=QRect(179, 739, 75, 16))
-        # self.objects_list.append(self.result_gliding_cl_constant_max_range)
-
-        # Result Max Endurance
-        # self.result_gliding_cl_constant_max_endurance = self.create_Qlabel(
-        #     label_name="result_gliding_cl_constant_max_endurance",
-        #     label_geometry=QRect(179, 761, 75, 16))
-        # self.objects_list.append(self.result_gliding_cl_constant_max_endurance)
-
-        # Gráficos CL Constant
-        # self.display_cl_constant_graphs = QPushButton(self.centralwidget)
-        # self.display_cl_constant_graphs.setText("")  # Set an empty text to hide the label
-        # self.display_cl_constant_graphs.setGeometry(QRect(62, 653, 33, 31))
-        # self.display_cl_constant_graphs.setStyleSheet("border: none; background: none;")  # Hide border and background
-        # self.display_cl_constant_graphs.clicked.connect(self.invoke_gliding_cl_constant_graphs)
-        #self.objects_list.append(self.display_cl_constant_graphs)
-
         # ------------------------------------------    V CONSTANT    -------------------------------------------------#
         # -------------------------------------------------------------------------------------------------------------#
 
@@ -262,39 +240,9 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(647, 539, 75, 16))
         self.objects_list.append(self.result_gliding_v_constant_default_endurance)
 
-        # Result Max Range
-        # self.result_gliding_v_constant_max_range = self.create_Qlabel(
-        #     label_name="result_gliding_v_constant_max_range",
-        #     label_geometry=QRect(442, 739, 75, 16))
-        # self.objects_list.append(self.result_gliding_v_constant_max_range)
-
-        # Result Max Endurance
-        # self.result_gliding_v_constant_max_endurance = self.create_Qlabel(
-        #     label_name="result_gliding_v_constant_max_endurance",
-        #     label_geometry=QRect(442, 761, 75, 16))
-        # self.objects_list.append(self.result_gliding_v_constant_max_endurance)
-
-        # Gráficos CL Constant
-        # self.display_v_constant_graphs = QPushButton(self.centralwidget)
-        # self.display_v_constant_graphs.setText("")  # Set an empty text to hide the label
-        # self.display_v_constant_graphs.setGeometry(QRect(307, 653, 33, 31))
-        # self.display_v_constant_graphs.setStyleSheet("border: none; background: none;")  # Hide border and background
-        # self.display_v_constant_graphs.clicked.connect(self.invoke_gliding_v_constant_graphs)
-        # self.objects_list.append(self.display_v_constant_graphs)
-
-
         # --------------------------------    RATE OF DESCENT AND GLIDING ANGLE    ------------------------------------#
         # -------------------------------------------------------------------------------------------------------------#
-        # self.result_rate_of_descent = self.create_Qlabel(
-        #     label_name="result_rate_of_descent",
-        #     label_geometry=QRect(675, 691, 75, 16))
-        # self.objects_list.append(self.result_rate_of_descent)
-        #
-        # self.result_gliding_angle = self.create_Qlabel(
-        #     label_name="result_gliding_angle",
-        #     label_geometry=QRect(675, 714, 75, 16))
-        # self.objects_list.append(self.result_gliding_angle)
-        #
+
         self.display_rate_of_descent_gliding_angle_graph = self.create_QPushButton(
             handle_function=self.invoke_gliding_descending_graphs,
             label_geometry=QRect(744, 541, 33, 31))
@@ -404,20 +352,10 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(176, 454, 63, 22))
         self.objects_list.append(self.result_range_constant_h_cl)
 
-        # self.result_max_range_constant_h_cl = self.create_Qlabel(
-        #     label_name="result_max_range_constant_h_cl",
-        #     label_geometry=QRect(455, 657, 63, 22))
-        # self.objects_list.append(self.result_max_range_constant_h_cl)
-
         self.result_endurance_constant_h_cl = self.create_Qlabel(
             label_name="result_endurance_constant_h_cl",
             label_geometry=QRect(294, 454, 63, 22))
         self.objects_list.append(self.result_endurance_constant_h_cl)
-
-        # self.result_max_endurance_constant_h_cl = self.create_Qlabel(
-        #     label_name="result_max_endurance_constant_h_cl",
-        #     label_geometry=QRect(693, 657, 63, 22))
-        # self.objects_list.append(self.result_max_endurance_constant_h_cl)
 
         ## Constant V-CL
 
@@ -426,22 +364,10 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(176, 485, 63, 22))
         self.objects_list.append(self.result_range_constant_v_cl)
 
-        # self.result_max_range_constant_v_cl = self.create_Qlabel(
-        #     label_name="result_max_range_constant_v_cl",
-        #     label_geometry=QRect(455, 687, 63, 22))
-        # self.objects_list.append(self.result_max_range_constant_v_cl)
-
         self.result_endurance_constant_v_cl = self.create_Qlabel(
             label_name="result_endurance_constant_v_cl",
             label_geometry=QRect(294, 487, 63, 22))
         self.objects_list.append(self.result_endurance_constant_v_cl)
-
-        # self.result_max_endurance_constant_v_cl = self.create_Qlabel(
-        #     label_name="result_max_endurance_constant_v_cl",
-        #     label_geometry=QRect(693, 687, 63, 22))
-        # self.objects_list.append(self.result_max_endurance_constant_v_cl)
-
-
 
         ## Constant h-V
 
@@ -450,31 +376,10 @@ class GUI_RESULTS(QMainWindow):
             label_geometry=QRect(176, 516, 63, 22))
         self.objects_list.append(self.result_range_constant_h_v)
 
-        # self.result_max_range_constant_h_v = self.create_Qlabel(
-        #     label_name="result_max_range_constant_h_v",
-        #     label_geometry=QRect(455, 717, 63, 22))
-        # self.objects_list.append(self.result_max_range_constant_h_v)
-
         self.result_endurance_constant_h_v = self.create_Qlabel(
             label_name="result_endurance_constant_h_v",
             label_geometry=QRect(294, 517, 63, 22))
         self.objects_list.append(self.result_endurance_constant_h_v)
-
-        # self.result_max_endurance_constant_h_v = self.create_Qlabel(
-        #     label_name="result_max_endurance_constant_h_v",
-        #     label_geometry=QRect(693, 717, 63, 22))
-        # self.objects_list.append(self.result_max_endurance_constant_h_v)
-
-
-        #Gráfico Flight Path
-        # self.display_flight_path_graph = QPushButton(self.centralwidget)
-        # # self.display_flight_path_graph = QPushButton(self.layout_fig_phases)
-        # self.display_flight_path_graph.setText("")  # Set an empty text to hide the label
-        # self.display_flight_path_graph.setGeometry(QRect(9, 622, 780, 165))
-        # self.display_flight_path_graph.setStyleSheet("border: none; background: none;")  # Hide border and background
-        # self.display_flight_path_graph.clicked.connect(self.invoke_flight_path_graph)
-        # self.objects_list.append(self.display_flight_path_graph)
-
 
         # --------------------------------------------------CLIMB -----------------------------------------------------#
 

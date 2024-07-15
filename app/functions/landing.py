@@ -1,21 +1,3 @@
-"""
-# -------------------------------------------------------------------------------------------------------------------- #
-# ----------------------------------------------------- LANDING ------------------------------------------------------ #
-# -------------------------------------------------------------------------------------------------------------------- #
-
-
-
-1. Approach distance and time
-2. Flare distance and time
-3. Rotation distance and time
-4. Landing roll distance and time
-
-x_la = x_ap + x_f + x_R_La + x_g_La
-t_la = t_ap + t_f + t_R_La + t_g_La
-
-
-gamma_Ap = approach slope, usualmente 3º (https://wiki.ivao.aero/en/home/training/documentation/IFR_Approach_procedure_-_Final_approach_segment#:~:text=In%20case%20of%20non-precision,runway%20centre%20line%20is%20mandatory.)
-"""
 import os
 import sys
 
@@ -36,6 +18,33 @@ aero = Aero()
 
 
 def calc_total_landing_distance(aircraft_parameters: dict, flight_parameters: dict, altitude=None):
+
+    """
+    Calcula a distância total de pouso de uma aeronave com base nos parâmetros de voo e parâmetros físicos da aeronave.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'CL_MAX' (float): Coeficiente de sustentação máximo (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo e de pouso.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso de combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso de carga despachada (N).
+        - 'landing_parameters' (dict): Dicionário contendo parâmetros específicos de pouso.
+            - 'WIND_VELOCITY_LANDING' (float): Velocidade do vento durante o pouso (m/s).
+            - 'ALTITUDE_LANDING' (float): Altitude do pouso (m).
+            - 'MU_LANDING' (float): Coeficiente de atrito para o pouso.
+    - altitude (float, opcional): Altitude do pouso (m). Se não fornecido, usa o valor de 'ALTITUDE_LANDING'.
+
+    Retorna:
+    - dict: Dicionário contendo as seguintes informações:
+        - 'LANDING_DISTANCE' (float): Distância total de pouso calculada (m).
+        - 'LANDING_APPROACH_DISTANCE' (float): Distância de aproximação durante o pouso (m).
+        - 'LANDING_ROTATION_DISTANCE' (float): Distância de rotação durante o pouso (m).
+        - 'LANDING_ROLL_DISTANCE' (float): Distância de rolagem durante o pouso (m).
+        - 'LANDING_FLARE_DISTANCE' (float): Distância de flare durante o pouso (m).
+    """
 
     gamma_Ap = aero.gamma_Ap
     V_wind = flight_parameters['landing_parameters']['WIND_VELOCITY_LANDING']
@@ -85,6 +94,34 @@ def calc_total_landing_distance(aircraft_parameters: dict, flight_parameters: di
 
 
 def calc_total_landing_time(aircraft_parameters: dict, flight_parameters: dict, altitude=None):
+
+    """
+    Calcula o tempo total de pouso de uma aeronave com base nos parâmetros de voo e parâmetros físicos da aeronave.
+
+    Parâmetros:
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+        - 'S' (float): Área da asa (m²).
+        - 'CL_MAX' (float): Coeficiente de sustentação máximo (adimensional).
+        - 'OEW' (float): Peso operacional vazio da aeronave (N).
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo e de pouso.
+        - 'NUMBER_OF_PASSENGERS' (int): Número de passageiros.
+        - 'FUEL_WEIGHT' (float): Peso de combustível (N).
+        - 'DISPATCHED_CARGO_WEIGHT' (float): Peso de carga despachada (N).
+        - 'landing_parameters' (dict): Dicionário contendo parâmetros específicos de pouso.
+            - 'WIND_VELOCITY_LANDING' (float): Velocidade do vento durante o pouso (m/s).
+            - 'ALTITUDE_LANDING' (float): Altitude do pouso (m).
+            - 'MU_LANDING' (float): Coeficiente de atrito para o pouso.
+    - altitude (float, opcional): Altitude do pouso (m). Se não fornecido, usa o valor de 'ALTITUDE_LANDING'.
+
+    Retorna:
+    - dict: Dicionário contendo as seguintes informações:
+        - 'LANDING_TIME' (float): Tempo total de pouso calculado (s).
+        - 'LANDING_APPROACH_TIME' (float): Tempo de aproximação durante o pouso (s).
+        - 'LANDING_ROTATION_TIME' (float): Tempo de rotação durante o pouso (s).
+        - 'LANDING_ROLL_TIME' (float): Tempo de rolagem durante o pouso (s).
+        - 'LANDING_FLARE_TIME' (float): Tempo de flare durante o pouso (s).
+    """
+
     gamma_Ap = aero.gamma_Ap
 
     V_wind = flight_parameters['landing_parameters']['WIND_VELOCITY_LANDING']
@@ -135,6 +172,23 @@ def calc_total_landing_time(aircraft_parameters: dict, flight_parameters: dict, 
 
 
 def calc_landing_distance_time_per_altitude(flight_parameters, aircraft_parameters, altitude=None):
+
+    """
+    Calcula a distância de pouso e o tempo de pouso para diferentes altitudes de pouso, variando de metade da altitude
+    de pouso até no máximo 3500 m.
+
+    Parâmetros:
+    - flight_parameters (dict): Dicionário contendo os parâmetros de voo e de pouso.
+        - 'landing_parameters' (dict): Dicionário contendo parâmetros específicos de pouso.
+            - 'ALTITUDE_LANDING' (float): Altitude de pouso (m).
+    - aircraft_parameters (dict): Dicionário contendo os parâmetros da aeronave.
+    - altitude (float, opcional): Altitude específica de pouso (m). Se não fornecido, usa o valor de 'ALTITUDE_LANDING'.
+
+    Retorna:
+    - pandas.DataFrame: DataFrame contendo as seguintes colunas:
+        - 'Landing Distance [m]': Distância de pouso calculada para cada altitude de pouso (m).
+        - 'Landing Time [s]': Tempo de pouso calculado para cada altitude de pouso (s).
+    """
 
     landing_altitude = flight_parameters['landing_parameters']['ALTITUDE_LANDING'] if altitude is None else altitude
 
